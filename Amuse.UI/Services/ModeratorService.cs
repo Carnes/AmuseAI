@@ -83,6 +83,9 @@ namespace Amuse.UI.Services
 
         private void CreateContentFilter()
         {
+            if (_settings.IsModelEvaluationModeEnabled)
+                return;
+
             var modelPath = Path.Combine(App.PluginDirectory, "ContentFilter", "ContentFilter.onnx");
             if (!File.Exists(modelPath))
                 throw new FileNotFoundException(modelPath);

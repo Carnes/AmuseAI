@@ -58,9 +58,6 @@ namespace Amuse.UI.Views
             if (!DesignerProperties.GetIsInDesignMode(this))
             {
                 _deviceService = App.GetService<IDeviceService>();
-                IsRyzenAI = _deviceService.IsRyzenAI;
-                IsNPUSuperResolutionSupported = _deviceService.IsNPUSuperResolutionSupported;
-                IsNPUStableDiffusionSupported = _deviceService.IsNPUStableDiffusionSupported;
             }
 
             _extractorProgressCallback = CreateExtractorProgressCallback();
@@ -109,9 +106,7 @@ namespace Amuse.UI.Views
         public AsyncRelayCommand<VideoResultModel> RemoveVideoCommand { get; set; }
         public AsyncRelayCommand<VideoResultModel> PreviewVideoCommand { get; set; }
         public ObservableCollection<VideoResultModel> VideoResults { get; }
-        public bool IsNPUSuperResolutionSupported { get; }
-        public bool IsNPUStableDiffusionSupported { get; }
-        public bool IsRyzenAI { get; }
+
 
         public PromptOptionsModel PromptOptions
         {
@@ -689,24 +684,6 @@ namespace Amuse.UI.Views
 
 
         /// <summary>
-        /// Executes the super resolution process.
-        /// </summary>
-        /// <param name="inputImage">The input image.</param>
-        /// <param name="cancellationToken">The cancellation token.</param>
-        /// <returns></returns>
-        protected async Task<OnnxImage> ExecuteSuperResolutionAsync(OnnxImage inputImage, CancellationToken cancellationToken)
-        {
-            if (IsSuperResolutionSupported && IsSuperResolutionEnabled)
-            {
-                UpdateProgress("AMD XDNA™ Super Resolution...", true);
-                var result = await Task.Run(() => SuperResolutionService.RunAsync(inputImage, cancellationToken));
-                return result;
-            }
-            return inputImage;
-        }
-
-
-        /// <summary>
         /// Executes the ContentFilter.
         /// </summary>
         /// <param name="inputImage">The input image.</param>
@@ -731,7 +708,6 @@ namespace Amuse.UI.Views
             var generateOptions = await GetGenerateImageOptionsAsync(cancellationToken);
             var result = await ExecuteStableDiffusionImageAsync(generateOptions, cancellationToken);
             result = await ExecuteContentFilterAsync(result, cancellationToken);
-            result = await ExecuteSuperResolutionAsync(result, cancellationToken);
             return await GenerateImageResultAsync(result, generateOptions, timestamp);
         }
 
@@ -745,7 +721,6 @@ namespace Amuse.UI.Views
             await foreach (var batchResult in ExecuteStableDiffusionImageBatchAsync(batchGenerateOptions, cancellationToken))
             {
                 var result = await ExecuteContentFilterAsync(batchResult.Result, cancellationToken);
-                result = await ExecuteSuperResolutionAsync(result, cancellationToken);
                 var batchResultOptions = generateOptions with { SchedulerOptions = batchResult.SchedulerOptions };
                 yield return await GenerateImageResultAsync(result, batchResultOptions, timestamp);
             }
@@ -770,7 +745,6 @@ namespace Amuse.UI.Views
 
                     var result = await ExecuteStableDiffusionImageAsync(generateOptions, cancellationToken);
                     result = await ExecuteContentFilterAsync(result, cancellationToken);
-                    result = await ExecuteSuperResolutionAsync(result, cancellationToken);
                     yield return await GenerateImageResultAsync(result, generateOptions, timestamp);
                 }
             }
@@ -1014,19 +988,7 @@ namespace Amuse.UI.Views
             }
             return inputVideo;
         }
-
-
-        protected async Task<OnnxVideo> ExecuteSuperResolutionAsync(OnnxVideo inputImage, CancellationToken cancellationToken)
-        {
-            if (IsSuperResolutionSupported && IsSuperResolutionEnabled)
-            {
-                UpdateProgress("AMD XDNA™ Super Resolution...", true);
-                var result = await Task.Run(() => SuperResolutionService.RunAsync(inputImage, cancellationToken));
-                return result;
-            }
-            return inputImage;
-        }
-
+     
 
         protected virtual async Task<OnnxVideo> ExecuteContentFilterAsync(OnnxVideo inputVideo, CancellationToken cancellationToken)
         {
@@ -1047,7 +1009,6 @@ namespace Amuse.UI.Views
             var generateOptions = await GetGenerateVideoOptionsAsync(cancellationToken);
             var result = await ExecuteStableDiffusionVideoAsync(generateOptions, cancellationToken);
             result = await ExecuteContentFilterAsync(result, cancellationToken);
-            result = await ExecuteSuperResolutionAsync(result, cancellationToken);
             return await GenerateVideoResultAsync(result, generateOptions, timestamp);
         }
 
@@ -1068,7 +1029,6 @@ namespace Amuse.UI.Views
                 };
                 var result = await ExecuteStableDiffusionVideoAsync(generateOptions, cancellationToken);
                 result = await ExecuteContentFilterAsync(result, cancellationToken);
-                result = await ExecuteSuperResolutionAsync(result, cancellationToken);
                 yield return await GenerateVideoResultAsync(result, generateOptions, timestamp);
                 BatchOptions.BatchValue++;
             }

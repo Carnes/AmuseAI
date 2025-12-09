@@ -19,7 +19,6 @@
         <Rectangle Fill="#FF272727" Width="600" Height="350" Stroke="#80d3ae58" StrokeThickness="1"/>
         <Image Source="/Images/Splash.png" SnapsToDevicePixels="True" RenderOptions.BitmapScalingMode="Fant"/>
         <Image Source="/Images/Splash_Logo.png" Width="200" Margin="301,0,299,60" Opacity=".95" SnapsToDevicePixels="True" RenderOptions.BitmapScalingMode="Fant"/>
-        <Image Source="/Images/Splash_AMD.png" Margin="615,371,118,91" Opacity=".95" SnapsToDevicePixels="True" RenderOptions.BitmapScalingMode="Fant" Stretch="Uniform"/>
         <TextBlock DockPanel.Dock="Bottom" Text="{Binding Title}" TextAlignment="Center" FontSize="15" Margin="0,337,0,0" VerticalAlignment="Top" SnapsToDevicePixels="True" RenderOptions.BitmapScalingMode="Fant"/>
     </Grid>
 </Window>

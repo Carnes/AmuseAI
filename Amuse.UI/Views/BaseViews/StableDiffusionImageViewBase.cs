@@ -696,24 +696,6 @@ namespace Amuse.UI.Views
 
 
         /// <summary>
-        /// Executes the super resolution process.
-        /// </summary>
-        /// <param name="inputImage">The input image.</param>
-        /// <param name="cancellationToken">The cancellation token.</param>
-        /// <returns></returns>
-        protected async Task<OnnxImage> ExecuteSuperResolutionAsync(OnnxImage inputImage, CancellationToken cancellationToken)
-        {
-            if (IsSuperResolutionSupported && IsSuperResolutionEnabled)
-            {
-                UpdateProgress("AMD XDNA™ Super Resolution...", true);
-                var result = await Task.Run(() => SuperResolutionService.RunAsync(inputImage, cancellationToken));
-                return result;
-            }
-            return inputImage;
-        }
-
-
-        /// <summary>
         /// Executes the ContentFilter.
         /// </summary>
         /// <param name="inputImage">The input image.</param>
@@ -741,7 +723,6 @@ namespace Amuse.UI.Views
             var result = await ExecuteStableDiffusionAsync(generateOptions, cancellationToken);
             result = await ExecuteContentFilterAsync(result, cancellationToken);
             result = await ExecuteUpscalerAsync(result, cancellationToken);
-            result = await ExecuteSuperResolutionAsync(result, cancellationToken);
             return await GenerateResultAsync(result, generateOptions, timestamp);
         }
 
@@ -756,7 +737,6 @@ namespace Amuse.UI.Views
             {
                 var result = await ExecuteContentFilterAsync(batchResult.Result, cancellationToken);
                 result = await ExecuteUpscalerAsync(result, cancellationToken);
-                result = await ExecuteSuperResolutionAsync(result, cancellationToken);
 
                 var batchResultOptions = generateOptions with { SchedulerOptions = batchResult.SchedulerOptions };
                 yield return await GenerateResultAsync(result, batchResultOptions, timestamp);
@@ -782,7 +762,6 @@ namespace Amuse.UI.Views
 
                     var result = await ExecuteStableDiffusionAsync(generateOptions, cancellationToken);
                     result = await ExecuteContentFilterAsync(result, cancellationToken);
-                    result = await ExecuteSuperResolutionAsync(result, cancellationToken);
                     result = await ExecuteUpscalerAsync(result, cancellationToken);
                     yield return await GenerateResultAsync(result, generateOptions, timestamp);
                 }

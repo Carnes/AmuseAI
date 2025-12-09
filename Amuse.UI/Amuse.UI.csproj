@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Version>3.1.0</Version>
+    <Version>3.2.0</Version>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows10.0.17763.0</TargetFramework>
     <Nullable>disable</Nullable>
@@ -18,6 +18,7 @@
     <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
   </PropertyGroup>
 
+
   <!--HostConfiguration-->
   <ItemGroup>
     <RuntimeHostConfigurationOption Include="System.GC.Server" Value="true" />
@@ -29,27 +30,25 @@
 
   <!--References All Modes-->
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.6" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.1" />
     <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.135" />
-    <PackageReference Include="Serilog.Extensions.Hosting" Version="9.0.0" />
-    <PackageReference Include="Serilog.Settings.Configuration" Version="9.0.0" />
+    <PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0" />
+    <PackageReference Include="Serilog.Settings.Configuration" Version="10.0.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
-    <PackageReference Include="System.Management" Version="9.0.6" />
+    <PackageReference Include="System.Management" Version="10.0.1" />
     <PackageReference Include="WinPixEventRuntime" Version="1.0.240308001" />
-    <PackageReference Include="Microsoft.AI.DirectML" Version="1.15.4" />
-    <PackageReference Include="Microsoft.ML.OnnxRuntime.Managed" Version="1.23.0-dev-20250603-0558-cd5133371" />
-    <PackageReference Include="Microsoft.ML.OnnxRuntime.MIGraphX.Windows" Version="1.23.0-dev-20250603-0558-cd5133371" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime.Managed" Version="1.23.2" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.23.0" />
   </ItemGroup>
 
 
   <!--References Debug/Release Modes-->
   <ItemGroup Condition="'$(Configuration)' == 'Debug' OR '$(Configuration)' == 'Release'">
-    <PackageReference Include="OnnxStack.Core" Version="0.41.34" />
-    <PackageReference Include="OnnxStack.Device" Version="0.41.34" />
-    <PackageReference Include="OnnxStack.StableDiffusion" Version="0.41.34" />
-    <PackageReference Include="OnnxStack.ImageUpscaler" Version="0.41.34" />
-    <PackageReference Include="OnnxStack.FeatureExtractor" Version="0.41.34" />
-    <PackageReference Include="OnnxStack.StableDiffusion.AMD" Version="0.41.34" />
+    <PackageReference Include="OnnxStack.Core" Version="0.60.0" />
+    <PackageReference Include="OnnxStack.Device" Version="0.60.0" />
+    <PackageReference Include="OnnxStack.StableDiffusion" Version="0.60.0" />
+    <PackageReference Include="OnnxStack.ImageUpscaler" Version="0.60.0" />
+    <PackageReference Include="OnnxStack.FeatureExtractor" Version="0.60.0" />
   </ItemGroup>
 
 
@@ -78,9 +77,6 @@
     </Reference>
     <Reference Include="OnnxStack.FeatureExtractor">
       <HintPath>..\..\OnnxStack-Private\OnnxStack.FeatureExtractor\bin\x64\Debug\net8.0\OnnxStack.FeatureExtractor.dll</HintPath>
-    </Reference>
-    <Reference Include="OnnxStack.StableDiffusion.AMD">
-      <HintPath>..\..\OnnxStack-Private\OnnxStack.StableDiffusion.AMD\bin\x64\Debug\net8.0\OnnxStack.StableDiffusion.AMD.dll</HintPath>
     </Reference>
     <None Include="..\..\OnnxStack-Private\OnnxStack.Adapter\x64\Debug\OnnxStack.Adapter.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -121,6 +117,27 @@
     <None Update="ColorPicker.dll">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
+    <None Update="Plugins\CLIPTokenizer\merges.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Plugins\CLIPTokenizer\special_tokens_map.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Plugins\CLIPTokenizer\vocab.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Plugins\Preview\Flux\model.onnx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Plugins\Preview\SD3\model.onnx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Plugins\Preview\SDXL\model.onnx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Plugins\Preview\SD\model.onnx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 
@@ -128,6 +145,9 @@
   <ItemGroup>
     <EmbeddedResource Include="Effects\DeeperColor.fx" />
     <Resource Include="Effects\DeeperColor.ps" />
+    <Resource Include="Fonts\Free-Brands-Regular-400.otf" />
+    <Resource Include="Fonts\Free-Regular-400.otf" />
+    <Resource Include="Fonts\Free-Solid-900.otf" />
     <Resource Include="Images\Icon.ico" />
     <Resource Include="Images\Icon.png" />
     <Resource Include="Images\Model.png" />
@@ -135,7 +155,6 @@
     <Resource Include="Images\placeholder_sm.png" />
     <Resource Include="Images\robot.png" />
     <Resource Include="Images\Splash.png" />
-    <Resource Include="Images\Splash_AMD.png" />
     <Resource Include="Images\Splash_Logo.png" />
     <Resource Include="Images\Tensorstack_Small.png" />
     <Resource Include="Images\Upscale.png" />
@@ -145,16 +164,9 @@
 
   <!--Fonts-->
   <ItemGroup>
-    <Resource Include="Fonts\Brands-Regular-400.otf" />
-    <Resource Include="Fonts\Duotone-Solid-900.otf" />
-    <Resource Include="Fonts\Light-300.otf" />
-    <Resource Include="Fonts\Regular-400.otf" />
-    <Resource Include="Fonts\Sharp-Light-300.otf" />
-    <Resource Include="Fonts\Sharp-Regular-400.otf" />
-    <Resource Include="Fonts\Sharp-Solid-900.otf" />
-    <Resource Include="Fonts\Sharp-Thin-100.otf" />
-    <Resource Include="Fonts\Solid-900.otf" />
-    <Resource Include="Fonts\Thin-100.otf" />
+    <None Remove="Fonts\Free-Brands-Regular-400.otf" />
+    <None Remove="Fonts\Free-Regular-400.otf" />
+    <None Remove="Fonts\Free-Solid-900.otf" />
   </ItemGroup>
 
 

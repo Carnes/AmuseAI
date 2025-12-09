@@ -9,7 +9,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Management;
 using System.Threading.Tasks;
 
 namespace Amuse.UI.Services
@@ -22,13 +21,8 @@ namespace Amuse.UI.Services
         private readonly ILogger<DeviceService> _logger;
         private readonly OrtEnvironment _environment;
         private readonly List<Device> _devices = [];
-        private readonly int _amdVendorId = 4098;
-
         private Device _baseDevice;
-        private bool _isRyzenAI;
-        private bool _isNPUSuperResolutionSupported;
-        private bool _isNPUStableDiffusionSupported;
-
+    
         /// <summary>
         /// Initializes a new instance of the <see cref="DeviceService"/> class.
         /// </summary>
@@ -53,16 +47,6 @@ namespace Amuse.UI.Services
         /// </summary>
         public IReadOnlyList<Device> Devices => _devices;
 
-        /// <summary>
-        /// Gets a value indicating whether the CPU is RyzenAI.
-        /// </summary>
-        /// <value><c>true</c> if the CPU is RyzenAI; otherwise, <c>false</c>.</value>
-        public bool IsRyzenAI => _isRyzenAI;
-
-        public bool IsNPUSuperResolutionSupported => _isNPUSuperResolutionSupported;
-
-        public bool IsNPUStableDiffusionSupported => _isNPUStableDiffusionSupported;
-
 
         /// <summary>
         /// Gets the hardware profile.
@@ -81,18 +65,12 @@ namespace Amuse.UI.Services
                 .OrderByDescending(x => x.MinMemory)
                 .FirstOrDefault();
 
-            // RyzenAI
-            if (baseDeviceSpecificProfile != null && _isRyzenAI)
+            if (baseDeviceSpecificProfile != null)
                 return baseDeviceSpecificProfile;
 
             // if iGPU and dGPU exist, choose dGPU
             if (deviceCount > 1)
                 baseDeviceSpecificProfile = null;
-
-            var amdDeviceSpecificProfile = _settings.HardwareProfiles
-               .Where(x => defaultDevice is not null && defaultDevice.IsAMDDevice && x.Name.StartsWith("AMDGPU") && x.MinMemory <= _settings.DefaultExecutionDevice.MemoryGB)
-               .OrderByDescending(x => x.MinMemory)
-               .FirstOrDefault();
 
             var defaultDeviceSpecificProfile = _settings.HardwareProfiles
                 .Where(x => defaultDevice is not null && x.Devices is not null && x.Devices.Contains(defaultDevice.Name, StringComparer.OrdinalIgnoreCase))
@@ -105,7 +83,6 @@ namespace Amuse.UI.Services
                .FirstOrDefault();
 
             var hardwareProfile = baseDeviceSpecificProfile
-                ?? amdDeviceSpecificProfile
                 ?? defaultDeviceSpecificProfile
                 ?? deviceSpecificProfile
                 ?? _settings.HardwareProfiles[0];
@@ -118,7 +95,6 @@ namespace Amuse.UI.Services
             //LogOrtDevices();
             _logger.LogInformation($"[DetectDevices] - Detecting devices...");
             DetectCPU();
-            DetectNPU();
             DetectGPU();
             SetDefaultDevice();
             _logger.LogInformation($"[DetectDevices] - Detecting complete.");
@@ -131,33 +107,9 @@ namespace Amuse.UI.Services
             _logger.LogInformation($"[DetectDevices] - Detecting CPU...");
             var cpuDevice = GetCPU();
             _baseDevice = cpuDevice;
-            _isRyzenAI = IsRyzenAIDevice(_baseDevice.Name);
             _devices.Add(_baseDevice);
             _logger.LogInformation($"[DetectDevices] - CPU: {_baseDevice.Name}, Memory: {_baseDevice.MemoryGB}GB");
             _logger.LogInformation($"[DetectDevices] - Detecting CPU complete.");
-        }
-
-
-        private void DetectNPU()
-        {
-            _logger.LogInformation($"[DetectDevices] - Detecting NPU...");
-            var npuDevice = GetNPU();
-            if (npuDevice != null)
-            {
-                _isNPUSuperResolutionSupported = true;
-                if (_isRyzenAI)
-                {
-                    _isNPUStableDiffusionSupported = IsDriverSupported(npuDevice.DriverVersion, "32.0.203.240");
-                }
-                _devices.Add(npuDevice);
-                _logger.LogInformation($"[DetectDevices] - NPU: {npuDevice.Name}, Memory: {npuDevice.MemoryGB}GB, Driver: {npuDevice.DriverVersion}, SuperResolution: {_isNPUSuperResolutionSupported}, StableDiffusion: {_isNPUStableDiffusionSupported}");
-                _logger.LogInformation($"[DetectDevices] - Detecting NPU complete.");
-            }
-            else
-            {
-                _logger.LogInformation($"[DetectDevices] - No NPU device found.");
-            }
-
         }
 
 
@@ -206,7 +158,7 @@ namespace Amuse.UI.Services
         {
             var cpuDevice = _hardwareService.CPUDevice;
             var cpuName = cpuDevice.Name.Split("w/", StringSplitOptions.TrimEntries).FirstOrDefault();
-            return new Device(DeviceType.CPU, ExecutionProvider.CPU, cpuName, 0, cpuDevice.MemoryTotal, 0, cpuDevice.Name, "0.0.0", false);
+            return new Device(DeviceType.CPU, ExecutionProvider.CPU, cpuName, 0, cpuDevice.MemoryTotal, 0, cpuDevice.Name, "0.0.0");
         }
 
 
@@ -225,7 +177,6 @@ namespace Amuse.UI.Services
 
                 var memory = gpuDevice.MemoryTotal;
                 var memoryShared = gpuDevice.SharedMemoryTotal;
-                var isAMDGPUDevice = gpuDevice.AdapterInfo.VendorId == _amdVendorId;
                 if (gpuDevice.AdapterInfo.IsIntegrated)
                 {
                     memory += memoryShared;
@@ -237,68 +188,13 @@ namespace Amuse.UI.Services
                     if (provider == ExecutionProvider.CPU)
                         continue;
 
-                    if (provider == ExecutionProvider.AMDGPU && !isAMDGPUDevice)
-                        continue;
-
                     if (!IsProviderSupported(provider, gpuDevice))
                         continue;
 
-                    devices.Add(new Device(DeviceType.GPU, provider, gpuDevice.Name, gpuDevice.Id, memory, memoryShared, gpuDevice.AdapterId, gpuDevice.DriverVersion, isAMDGPUDevice));
+                    devices.Add(new Device(DeviceType.GPU, provider, gpuDevice.Name, gpuDevice.Id, memory, memoryShared, gpuDevice.AdapterId, gpuDevice.DriverVersion));
                 }
             }
             return devices.ToArray();
-        }
-
-
-        private Device GetNPU()
-        {
-            var npuDevice = _hardwareService.NPUDevice;
-            if (npuDevice != null)
-            {
-                LogAdapter(npuDevice);
-                return new Device(DeviceType.NPU, ExecutionProvider.CPU, npuDevice.Name, 0, npuDevice.MemoryTotal, 0, npuDevice.Name, npuDevice.DriverVersion, true);
-            }
-            return GetNPULegacy();
-        }
-
-
-        private Device GetNPULegacy()
-        {
-            try
-            {
-                var knownNPUDevices = new[] { "AMD NPU Device", "NPU Compute Accelerator Device" };
-                using (var searcherDevice = new ManagementObjectSearcher(new ObjectQuery($"SELECT DeviceName, DriverVersion FROM Win32_PnPSignedDriver WHERE DeviceName LIKE '%{knownNPUDevices[0]}%' OR DeviceName LIKE '%{knownNPUDevices[1]}%'")))
-                {
-                    foreach (var result in searcherDevice.Get())
-                    {
-                        var deviceName = result["DeviceName"]?.ToString() ?? string.Empty;
-                        var driverVersion = result["DriverVersion"]?.ToString() ?? string.Empty;
-                        return new Device(DeviceType.NPU, ExecutionProvider.CPU, deviceName, 0, 0, 0, deviceName, driverVersion, true);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "[DetectNPULegacy] - Failed to detect NPU");
-            }
-            return default;
-        }
-
-
-        private bool IsRyzenAIDevice(string deviceName)
-        {
-            return deviceName.StartsWith("AMD Ryzen AI", StringComparison.OrdinalIgnoreCase)
-                || deviceName.StartsWith("AMD Eng Sample: 100-000000994-37_Y", StringComparison.OrdinalIgnoreCase);
-        }
-
-
-        private bool IsDriverSupported(string currentVersion, string minimumVersion)
-        {
-            if (!long.TryParse(currentVersion.Replace(".", ""), out long currentVersionNum))
-                return false;
-            if (!long.TryParse(minimumVersion.Replace(".", ""), out long minimumVersionNum))
-                return false;
-            return currentVersionNum >= minimumVersionNum;
         }
 
 
@@ -311,8 +207,6 @@ namespace Amuse.UI.Services
                     session.LogSeverityLevel = OrtLoggingLevel.ORT_LOGGING_LEVEL_ERROR;
                     if (provider == ExecutionProvider.DirectML)
                         session.AppendExecutionProvider_DML(device.Id);
-                    else if (provider == ExecutionProvider.AMDGPU)
-                        session.AppendExecutionProvider_MIGraphX(new OrtMIGraphXProviderOptions { DeviceId = device.Id });
 
                     using (var inferenceSession = new InferenceSession(_testModel, session))
                     {
@@ -337,7 +231,6 @@ namespace Amuse.UI.Services
             _logger.LogDebug("DriverVersion: {DriverVersion}", device.DriverVersion);
             _logger.LogDebug("AdapterId: {AdapterId}", device.AdapterId);
             LogAdapter(device.AdapterInfo);
-            _logger.LogDebug($"IsAMDGPU: {device.AdapterInfo.VendorId == _amdVendorId}");
             _logger.LogDebug("---------------------------------------------------------");
         }
 

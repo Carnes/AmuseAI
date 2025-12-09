@@ -18,33 +18,33 @@
                             <Setter Property="FontFamily" Value="{StaticResource FontAwesomeRegular}" />
                         </DataTrigger>
                         <DataTrigger  Binding="{Binding IconStyle}" Value="Light">
-                            <Setter Property="FontFamily" Value="{StaticResource FontAwesomeLight}" />
+                            <Setter Property="FontFamily" Value="{StaticResource FontAwesomeRegular}" />
                         </DataTrigger>
                         <DataTrigger  Binding="{Binding IconStyle}" Value="Solid">
                             <Setter Property="FontFamily" Value="{StaticResource FontAwesomeSolid}" />
                         </DataTrigger>
                         <DataTrigger  Binding="{Binding IconStyle}" Value="Thin">
-                            <Setter Property="FontFamily" Value="{StaticResource FontAwesomeThin}" />
+                            <Setter Property="FontFamily" Value="{StaticResource FontAwesomeRegular}" />
                         </DataTrigger>
 
                         <DataTrigger  Binding="{Binding IconStyle}" Value="Brands">
                             <Setter Property="FontFamily" Value="{StaticResource FontAwesomeBrands}" />
                         </DataTrigger>
                         <DataTrigger  Binding="{Binding IconStyle}" Value="Duotone">
-                            <Setter Property="FontFamily" Value="{StaticResource FontAwesomeDuotone}" />
+                            <Setter Property="FontFamily" Value="{StaticResource FontAwesomeRegular}" />
                         </DataTrigger>
 
                         <DataTrigger  Binding="{Binding IconStyle}" Value="SharpRegular">
-                            <Setter Property="FontFamily" Value="{StaticResource FontAwesomeSharpRegular}" />
+                            <Setter Property="FontFamily" Value="{StaticResource FontAwesomeRegular}" />
                         </DataTrigger>
                         <DataTrigger  Binding="{Binding IconStyle}" Value="SharpLight">
-                            <Setter Property="FontFamily" Value="{StaticResource FontAwesomeSharpLight}" />
+                            <Setter Property="FontFamily" Value="{StaticResource FontAwesomeRegular}" />
                         </DataTrigger>
                         <DataTrigger  Binding="{Binding IconStyle}" Value="SharpSolid">
-                            <Setter Property="FontFamily" Value="{StaticResource FontAwesomeSharpSolid}" />
+                            <Setter Property="FontFamily" Value="{StaticResource FontAwesomeRegular}" />
                         </DataTrigger>
                         <DataTrigger  Binding="{Binding IconStyle}" Value="SharpThin">
-                            <Setter Property="FontFamily" Value="{StaticResource FontAwesomeSharpThin}" />
+                            <Setter Property="FontFamily" Value="{StaticResource FontAwesomeRegular}" />
                         </DataTrigger>
                     </Style.Triggers>
                 </Style>

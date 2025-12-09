@@ -172,7 +172,6 @@ namespace Amuse.UI
             builder.Services.AddSingleton<IDeviceService, DeviceService>();
             builder.Services.AddSingleton<IFileService, FileService>();
             builder.Services.AddSingleton<IModelCacheService, ModelCacheService>();
-            builder.Services.AddSingleton<ISuperResolutionService, SuperResolutionService>();
             builder.Services.AddSingleton<IModeratorService, ModeratorService>();
             builder.Services.AddSingleton<IPreviewService, PreviewService>();
             builder.Services.AddSingleton<IHardwareService, HardwareService>();

@@ -7,9 +7,6 @@ namespace Amuse.UI.Services
     {
         Device BaseDevice { get; }
         IReadOnlyList<Device> Devices { get; }
-        bool IsRyzenAI { get; }
-        bool IsNPUSuperResolutionSupported { get; }
-        bool IsNPUStableDiffusionSupported { get; }
         HardwareProfile GetHardwareProfile();
     }
 }

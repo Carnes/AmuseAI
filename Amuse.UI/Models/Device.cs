@@ -7,7 +7,7 @@ namespace Amuse.UI.Models
 {
     public class Device : INotifyPropertyChanged
     {
-        public Device(DeviceType deviceType, ExecutionProvider provider ,string name, int deviceId, float memory, float memoryShared, string adapterId, string driverVersion, bool isAMDDevice)
+        public Device(DeviceType deviceType, ExecutionProvider provider ,string name, int deviceId, float memory, float memoryShared, string adapterId, string driverVersion)
         {
             DeviceType = deviceType;
             Provider = provider;
@@ -17,7 +17,6 @@ namespace Amuse.UI.Models
             DeviceId = deviceId;
             AdapterId = adapterId;
             DriverVersion = driverVersion;
-            IsAMDDevice = isAMDDevice;
         }
 
         public DeviceType DeviceType { get;}

@@ -48,7 +48,6 @@ namespace Amuse.UI.Views.EZMode
         public GenerateView() : base()
         {
             SupportedDiffusers = [DiffuserType.TextToImage];
-            IsSuperResolutionEnabled = IsSuperResolutionSupported;
             ShowImagePreviewCommand = new AsyncRelayCommand<ImageResult>(ShowImagePreview);
             ShowVideoPreviewCommand = new AsyncRelayCommand<VideoResultModel>(ShowVideoPreview);
             SelectResolutionCommand = new RelayCommand<HardwareProfileAspectType>(SelectResolution);
@@ -214,9 +213,6 @@ namespace Amuse.UI.Views.EZMode
 
             SelectResolution(ProfileOption.Aspect);
             SelectedModelTemplate = Settings.Templates.FirstOrDefault(x => x.Id == ProfileOption.ModelId);
-            IsNPUStableDiffusionVisible = IsNPUStableDiffusionSupported && (SelectedModelTemplate.Variants?.Any(x => x == "RyzenAI") ?? false);
-
-            IsQualityBoostSupported = IsRyzenAI && _selectedModelQuality == HardwareProfileQualityType.Quality && !IsNPUStableDiffusionVisible;
             SetSteps();
             base.OnGenerationModeChanged();
         }
@@ -259,11 +255,6 @@ namespace Amuse.UI.Views.EZMode
         {
             try
             {
-                if (IsNPUStableDiffusionSupported && IsNPUStableDiffusionEnabled && DeviceService.BaseDevice.MemoryGB < 15)
-                {
-                    await DialogService.ShowMessageDialogAsync("System Memory", $"AMD XDNA™ 2 offload needs at least 16GB system RAM\nSystem RAM detected: {DeviceService.BaseDevice.MemoryGB}GB", MessageDialog.MessageDialogType.Ok, MessageDialog.MessageBoxIconType.Warning, MessageDialog.MessageBoxStyleType.Warning);
-                    throw new OperationCanceledException();
-                }
 
                 if (await ModeratorService.ContainsExplicitContentAsync(PromptOptions.Prompt))
                     throw new OperationCanceledException();
@@ -281,16 +272,8 @@ namespace Amuse.UI.Views.EZMode
                 SetResultLayout();
                 using (CancelationTokenSource = new CancellationTokenSource())
                 {
-                    var variant = IsNPUStableDiffusionVisible && IsNPUStableDiffusionEnabled && IsNPUStableDiffusionSupported ? "RyzenAI" : default;
-                    if (CurrentPipeline?.IsLoaded == true)
-                    {
-                        if (SelectedVariant != variant)
-                            await UnloadPipelineAsync();
-                    }
-
                     // Select & Load Model
                     SelectedBaseModel = Settings.StableDiffusionModelSets.FirstOrDefault(x => x.Id == _selectedModelTemplate.Id);
-                    SelectedVariant = variant;
 
                     // Load Pipeline
                     await LoadPipelineAsync();

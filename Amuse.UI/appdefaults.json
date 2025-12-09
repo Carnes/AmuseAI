@@ -7,7 +7,7 @@
     "FileVersion": "2",
     "HasExited": true,
     "IsUpdateEnabled": true,
-    "UIMode": "Basic",
+    "UIMode": "Normal",
     "ModelCacheMode": "Single",
     "RenderMode": "SoftwareOnly",
     "UseLegacyDeviceDetection": false,
@@ -29,7 +29,7 @@
     "DefaultDeviceId": null,
     "DefaultProvider": null,
     "SupportedProviders": ["CPU", "DirectML"],
-    "IsModelEvaluationModeEnabled": false,
+    "IsModelEvaluationModeEnabled": true,
     "Prompts": [
       {
         "Prompt": "Create an image of a wise old wizard with a long white beard, holding a staff topped with a crystal and casting a spell",

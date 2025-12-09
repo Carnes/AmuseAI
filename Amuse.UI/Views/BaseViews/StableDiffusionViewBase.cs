@@ -28,8 +28,6 @@ namespace Amuse.UI.Views
                 ModelCacheService = App.GetService<IModelCacheService>();
                 ModeratorService = App.GetService<IModeratorService>();
                 PreviewService = App.GetService<IPreviewService>();
-                SuperResolutionService = App.GetService<ISuperResolutionService>();
-                IsSuperResolutionSupported = SuperResolutionService.IsSupported;
             }
 
             ProgressCallback = CreateProgressCallback();
@@ -63,9 +61,6 @@ namespace Amuse.UI.Views
 
         public static readonly DependencyProperty IsFeatureExtractorEnabledProperty =
             DependencyProperty.Register(nameof(IsFeatureExtractorEnabled), typeof(bool), typeof(StableDiffusionViewBase));
-
-        public static readonly DependencyProperty IsSuperResolutionEnabledProperty =
-            DependencyProperty.Register(nameof(IsSuperResolutionEnabled), typeof(bool), typeof(StableDiffusionViewBase));
 
         public static readonly DependencyProperty IsPipelineLoadingProperty =
             DependencyProperty.Register(nameof(IsPipelineLoading), typeof(bool), typeof(StableDiffusionViewBase));
@@ -161,14 +156,6 @@ namespace Amuse.UI.Views
             set { SetValue(IsFeatureExtractorEnabledProperty, value); }
         }
 
-        /// <summary>
-        /// Gets or sets a value indicating whether this instance is super resolution enabled.
-        /// </summary>
-        public bool IsSuperResolutionEnabled
-        {
-            get { return (bool)GetValue(IsSuperResolutionEnabledProperty); }
-            set { SetValue(IsSuperResolutionEnabledProperty, value); }
-        }
 
         /// <summary>
         /// Gets or sets a value indicating whether the pipeline is loading.
@@ -185,10 +172,6 @@ namespace Amuse.UI.Views
         /// <value>
         public IModelCacheService ModelCacheService { get; }
 
-        /// <summary>
-        /// Gets the super resolution service.
-        /// </summary>
-        public ISuperResolutionService SuperResolutionService { get; }
 
         /// <summary>
         /// Gets the moderator service.
@@ -226,11 +209,6 @@ namespace Amuse.UI.Views
         public virtual bool IsFeatureExtractorSupported { get; }
 
         /// <summary>
-        /// Gets a value indicating whether this view supports SuperResolution.
-        /// </summary>
-        public virtual bool IsSuperResolutionSupported { get; }
-
-        /// <summary>
         /// Gets the diffusion progress callback.
         /// </summary>
         protected IProgress<DiffusionProgress> ProgressCallback { get; }
@@ -254,8 +232,6 @@ namespace Amuse.UI.Views
                     await UnloadFeatureExtractorAsync();
                 if (!ModeratorService.IsContentFilterEnabled)
                     await UnloadContentFilterAsync();
-                if (!IsSuperResolutionEnabled)
-                    await UnloadSuperResolutionAsync();
 
                 if (SelectedBaseModel.Variant != SelectedVariant)
                 {
@@ -281,7 +257,6 @@ namespace Amuse.UI.Views
                     LoadUpscalerAsync(),
                     LoadFeatureExtractorAsync(),
                     LoadContentFilterAsync(),
-                    LoadSuperResolutionAsync(),
                     LoadPreviewAsync());
             }
             catch (OperationCanceledException)
@@ -339,14 +314,7 @@ namespace Amuse.UI.Views
                     return false;
                 loaded = loaded && ModeratorService.ContentFilterModel.IsLoaded;
             }
-
-            if (IsSuperResolutionEnabled)
-            {
-                if (SuperResolutionService is null)
-                    return false;
-                loaded = loaded && SuperResolutionService.IsLoaded;
-            }
-
+     
 
             if (loaded)
             {
@@ -364,8 +332,6 @@ namespace Amuse.UI.Views
                 if (CurrentPipeline?.FeatureExtractorModel != SelectedFeatureExtractorModel)
                     return true;
                 if (CurrentPipeline?.ContentFilterModel != ModeratorService.ContentFilterModel)
-                    return true;
-                if (IsSuperResolutionEnabled != SuperResolutionService.IsLoaded)
                     return true;
 
                 return !CurrentPipeline.IsLoaded;
@@ -405,7 +371,6 @@ namespace Amuse.UI.Views
                   UnloadControlNetAsync(),
                   UnloadUpscalerAsync(),
                   UnloadContentFilterAsync(),
-                  UnloadSuperResolutionAsync(),
                   UnloadPreviewAsync());
         }
 
@@ -540,34 +505,6 @@ namespace Amuse.UI.Views
                 return;
 
             await ModelCacheService.UnloadModelAsync(CurrentPipeline?.ContentFilterModel);
-        }
-
-
-        /// <summary>
-        /// Load super resolution
-        /// </summary>
-        /// <returns>A Task representing the asynchronous operation.</returns>
-        protected async Task LoadSuperResolutionAsync()
-        {
-            if (!IsSuperResolutionSupported)
-                return;
-            if (!IsSuperResolutionEnabled)
-                return;
-
-            await SuperResolutionService.LoadAsync();
-        }
-
-
-        /// <summary>
-        /// Unload super resolution
-        /// </summary>
-        /// <returns>A Task representing the asynchronous operation.</returns>
-        protected async Task UnloadSuperResolutionAsync()
-        {
-            if (!IsSuperResolutionSupported)
-                return;
-
-            await SuperResolutionService.UnloadAsync();
         }
 
 

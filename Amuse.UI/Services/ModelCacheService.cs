@@ -8,8 +8,6 @@ using OnnxStack.Core;
 using OnnxStack.Core.Config;
 using OnnxStack.Core.Model;
 using OnnxStack.FeatureExtractor.Pipelines;
-using OnnxStack.StableDiffusion.AMD.StableDiffusion;
-using OnnxStack.StableDiffusion.AMD.StableDiffusion3;
 using OnnxStack.StableDiffusion.Enums;
 using OnnxStack.StableDiffusion.Models;
 using OnnxStack.StableDiffusion.Pipelines;
@@ -352,19 +350,15 @@ namespace Amuse.UI.Services
                 FlowEstimationConfig = SetVariantModelPath(model.ModelSet.FlowEstimationConfig?.ToModelConfig(flowEstimationProvider), model.Variant),
             };
 
-            var isRyzenAIModel = model.Variant == "RyzenAI";
+
             return modelset.PipelineType switch
             {
-                PipelineType.StableDiffusion => isRyzenAIModel
-                    ? AMDNPUStableDiffusionPipeline.CreatePipeline(modelset, _logger)
-                    : StableDiffusionPipeline.CreatePipeline(modelset, _logger),
+                PipelineType.StableDiffusion => StableDiffusionPipeline.CreatePipeline(modelset, _logger),
                 PipelineType.StableDiffusion2 => StableDiffusion2Pipeline.CreatePipeline(modelset, _logger),
                 PipelineType.StableDiffusionXL => StableDiffusionXLPipeline.CreatePipeline(modelset, _logger),
                 PipelineType.LatentConsistency => LatentConsistencyPipeline.CreatePipeline(modelset, _logger),
                 PipelineType.StableCascade => StableCascadePipeline.CreatePipeline(modelset, _logger),
-                PipelineType.StableDiffusion3 => isRyzenAIModel
-                    ? AMDNPUStableDiffusion3Pipeline.CreatePipeline(modelset, _logger)
-                    : StableDiffusion3Pipeline.CreatePipeline(modelset, _logger),
+                PipelineType.StableDiffusion3 => StableDiffusion3Pipeline.CreatePipeline(modelset, _logger),
                 PipelineType.Flux => FluxPipeline.CreatePipeline(modelset, _logger),
                 PipelineType.Locomotion => LocomotionPipeline.CreatePipeline(modelset, _logger),
                 _ => throw new NotSupportedException()
@@ -420,12 +414,6 @@ namespace Amuse.UI.Services
 
             var deviceId = modelJson.DeviceId ?? model.ModelSet.DeviceId;
             var executionProvider = modelJson.ExecutionProvider ?? model.ModelSet.ExecutionProvider;
-            if (!string.IsNullOrEmpty(model.Variant))
-            {
-                var variantModel = GetVariantPath(modelJson.OnnxModelPath, model.Variant);
-                if (File.Exists(variantModel) && model.Variant.Equals("RyzenAI"))
-                    return _providerService.GetRyzenAI(deviceId, model.ModelSet.PipelineType);
-            }
             return _providerService.GetProvider(executionProvider, deviceId);
         }
 

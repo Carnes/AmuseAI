@@ -33,16 +33,10 @@
         <BitmapImage x:Key="ImageAvatarRobot" UriSource="/Images/robot.png" />
         <BitmapImage x:Key="ImageTensorStackSmall" UriSource="/Images/Tensorstack_Small.png" />
 
-        <FontFamily x:Key="FontAwesomeBrands">pack://application:,,,/Fonts/Brands-Regular-400.otf#Font Awesome 6 Brands Regular</FontFamily>
-        <FontFamily x:Key="FontAwesomeDuotone">pack://application:,,,/Fonts/Duotone-Solid-900.otf#Font Awesome 6 Duotone Solid</FontFamily>
-        <FontFamily x:Key="FontAwesomeLight">pack://application:,,,/Fonts/Light-300.otf#Font Awesome 6 Pro Light</FontFamily>
-        <FontFamily x:Key="FontAwesomeRegular">pack://application:,,,/Fonts/Regular-400.otf#Font Awesome 6 Pro Regular</FontFamily>
-        <FontFamily x:Key="FontAwesomeSolid">pack://application:,,,/Fonts/Solid-900.otf#Font Awesome 6 Pro Solid</FontFamily>
-        <FontFamily x:Key="FontAwesomeThin">pack://application:,,,/Fonts/Thin-100.otf#Font Awesome 6 Pro Thin</FontFamily>
-        <FontFamily x:Key="FontAwesomeSharpLight">pack://application:,,,/Fonts/Sharp-Light-300.otf#Font Awesome 6 Sharp Light</FontFamily>
-        <FontFamily x:Key="FontAwesomeSharpRegular">pack://application:,,,/Fonts/Sharp-Regular-400.otf#Font Awesome 6 Sharp Regular</FontFamily>
-        <FontFamily x:Key="FontAwesomeSharpSolid">pack://application:,,,/Fonts/Sharp-Solid-900.otf#Font Awesome 6 Sharp Solid</FontFamily>
-        <FontFamily x:Key="FontAwesomeSharpThin">pack://application:,,,/Fonts/Sharp-Thin-100.otf#Font Awesome 6 Sharp Thin</FontFamily>
+        <FontFamily x:Key="FontAwesomeBrands">pack://application:,,,/Fonts/Free-Brands-Regular-400.otf#Font Awesome 6 Brands Regular</FontFamily>
+        <FontFamily x:Key="FontAwesomeRegular">pack://application:,,,/Fonts/Free-Regular-400.otf#Font Awesome 6 Free Regular</FontFamily>
+        <FontFamily x:Key="FontAwesomeSolid">pack://application:,,,/Fonts/Free-Solid-900.otf#Font Awesome 6 Free Solid</FontFamily>
+
 
         <system:Boolean x:Key="True">True</system:Boolean>
         <system:Boolean x:Key="False">False</system:Boolean>

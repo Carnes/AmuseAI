@@ -344,5 +344,3 @@ test/TensorFlowNET.Examples/mnist
 site/
 
 docker-test-output/*
-
-*.otf

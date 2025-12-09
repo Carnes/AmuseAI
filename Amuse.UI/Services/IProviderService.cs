@@ -7,6 +7,5 @@ namespace Amuse.UI.Services
     public interface IProviderService
     {
         OnnxExecutionProvider GetProvider(ExecutionProvider? provider, int? deviceId);
-        OnnxExecutionProvider GetRyzenAI(int? deviceId, PipelineType pipelineType);
     }
 }
