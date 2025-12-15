@@ -7,6 +7,5 @@ namespace Amuse.UI.Services
     {
         Device BaseDevice { get; }
         IReadOnlyList<Device> Devices { get; }
-        HardwareProfile GetHardwareProfile();
     }
 }

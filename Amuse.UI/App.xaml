@@ -2276,40 +2276,7 @@
 
 
                                     <!--UI Mode-->
-                                    <Grid  Visibility="{Binding RelativeSource={RelativeSource FindAncestor,AncestorType={x:Type Window}}, Path=IsUIModeCommandEnabled, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Hidden}" IsEnabled="{Binding IsGenerating, Source={x:Static Application.Current}, Converter={StaticResource InverseBoolConverter}}">
-
-                                        <UniformGrid Columns="3" HorizontalAlignment="Center" VerticalAlignment="Top" WindowChrome.IsHitTestVisibleInChrome="True" Visibility="{Binding SelectedUIMode, Source={x:Static Application.Current}, Converter={StaticResource InverseEnumToVisibilityConverter}, ConverterParameter=Normal}"  >
-                                            <Button Content="Generate" Command="{Binding SwitchModeCommand, Source={x:Static Application.Current}}" IsEnabled="{Binding SelectedUIMode, Source={x:Static Application.Current}, ConverterParameter=Basic, Converter={StaticResource InverseEnumToBoolConverter}}" Padding="8,3" Style="{StaticResource UIModeButton}" Tag="0" Width="100">
-                                                <Button.CommandParameter>
-                                                    <enums:UIModeType>Basic</enums:UIModeType>
-                                                </Button.CommandParameter>
-                                            </Button>
-                                            <Button Content="AI Filters" Command="{Binding SwitchModeCommand, Source={x:Static Application.Current}}" IsEnabled="{Binding SelectedUIMode, Source={x:Static Application.Current}, ConverterParameter=Modify, Converter={StaticResource InverseEnumToBoolConverter}}" Padding="8,1">
-                                                <Button.CommandParameter>
-                                                    <enums:UIModeType>Modify</enums:UIModeType>
-                                                </Button.CommandParameter>
-                                            </Button>
-                                            <Button Content="Design" Command="{Binding SwitchModeCommand, Source={x:Static Application.Current}}" IsEnabled="{Binding SelectedUIMode, Source={x:Static Application.Current}, ConverterParameter=Paint, Converter={StaticResource InverseEnumToBoolConverter}}" Padding="8,1" Style="{StaticResource UIModeButton}" Tag="1">
-                                                <Button.CommandParameter>
-                                                    <enums:UIModeType>Paint</enums:UIModeType>
-                                                </Button.CommandParameter>
-                                            </Button>
-                                        </UniformGrid>
-
-                                        <Button
-                                            Tag="2"
-                                            Width="100"
-                                            VerticalAlignment="Top"
-                                            Padding="8,3" 
-                                            Content="EZ Mode" 
-                                            Style="{StaticResource UIModeButton}"
-                                            WindowChrome.IsHitTestVisibleInChrome="True"
-                                            Command="{Binding SwitchModeCommand, Source={x:Static Application.Current}}" 
-                                            Visibility="{Binding SelectedUIMode, Source={x:Static Application.Current}, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Normal}">
-                                            <Button.CommandParameter>
-                                                <enums:UIModeType>Basic</enums:UIModeType>
-                                            </Button.CommandParameter>
-                                        </Button>
+                                    <Grid>
 
                                     </Grid>
 

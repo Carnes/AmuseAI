@@ -22,7 +22,6 @@ namespace Amuse.UI.Windows
             Logger = logger;
             Settings = settings;
             IsLogCommandEnabled = true;
-            IsUIModeCommandEnabled = true;
             NavigateCommand = new AsyncRelayCommand<NavigationModel>(NavigateAsync);
 
             InitializeComponent();

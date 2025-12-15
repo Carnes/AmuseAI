@@ -1,9 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Version>3.2.0</Version>
+    <Version>3.2.1</Version>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows10.0.17763.0</TargetFramework>
+    <TargetFramework>net9.0-windows10.0.17763.0</TargetFramework>
     <Nullable>disable</Nullable>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
@@ -36,7 +36,6 @@
     <PackageReference Include="Serilog.Settings.Configuration" Version="10.0.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
     <PackageReference Include="System.Management" Version="10.0.1" />
-    <PackageReference Include="WinPixEventRuntime" Version="1.0.240308001" />
     <PackageReference Include="Microsoft.ML.OnnxRuntime.Managed" Version="1.23.2" />
     <PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.23.0" />
   </ItemGroup>
@@ -99,21 +98,6 @@
     <Reference Include="ColorPicker">
       <HintPath>ColorPicker.dll</HintPath>
     </Reference>
-    <None Update="Cache\139c3741-0a30-4a6b-84b1-6fc89778d02d\Icon.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Cache\139c3741-0a30-4a6b-84b1-6fc89778d02d\Sample.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Cache\139c3741-0a30-4a6b-84b1-6fc89778d02d\Sample2.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Cache\139c3741-0a30-4a6b-84b1-6fc89778d02d\Sample3.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Cache\139c3741-0a30-4a6b-84b1-6fc89778d02d\Sample4.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Update="ColorPicker.dll">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>

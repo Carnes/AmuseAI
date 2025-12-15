@@ -2,12 +2,12 @@
 using Amuse.UI.Models;
 using Amuse.UI.Models.FeatureExtractor;
 using Microsoft.Extensions.Logging;
+using OnnxStack.Core;
 using OnnxStack.StableDiffusion.Tokenizers;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -28,8 +28,6 @@ namespace Amuse.UI.Services
         private readonly ILogger<ModeratorService> _logger;
         private readonly AmuseSettings _settings;
         private readonly IDialogService _dialogService;
-        private readonly string _hashContentFilterBin = "92624cc3ebe28e7b95bc36a7b2dcda7c3f8211dad0ff127264a5f53d9f16752f";
-        private readonly string _hashContentFilterOnnx = "eb240e8d2d6f41d53a38caba799c5e7d7ce03db6ed627151ac93b59e75f37106";
         private readonly ClipTokenizer _clipTokenizer;
 
         private string[] _contentFilterWordList;
@@ -53,6 +51,9 @@ namespace Amuse.UI.Services
             if (_settings.IsModelEvaluationModeEnabled)
                 return false;
 
+            if (_contentFilterWordList.IsNullOrEmpty())
+                return false;
+
             var analyzeResult = AnalyzeExplicitContent(prompt);
             if (analyzeResult.Count == 0)
                 return false;
@@ -69,6 +70,7 @@ namespace Amuse.UI.Services
             return true;
         }
 
+
         private Dictionary<string, int> AnalyzeExplicitContent(string prompt)
         {
             if (string.IsNullOrWhiteSpace(prompt))
@@ -83,31 +85,25 @@ namespace Amuse.UI.Services
 
         private void CreateContentFilter()
         {
-            if (_settings.IsModelEvaluationModeEnabled)
-                return;
-
             var modelPath = Path.Combine(App.PluginDirectory, "ContentFilter", "ContentFilter.onnx");
-            if (!File.Exists(modelPath))
-                throw new FileNotFoundException(modelPath);
-            if (!IsFileHashValid(modelPath, _hashContentFilterOnnx))
-                throw new FileLoadException("Hash check failed for ContentFilter.onnx");
+            if (File.Exists(modelPath))
+            {
+                _contentFilterModel = new ContentFilterModelSetViewModel
+                {
+                    Id = Guid.NewGuid(),
+                    ModelSet = new FeatureExtractorModelJson
+                    {
+                        Name = "ContentFilter",
+                        OnnxModelPath = modelPath
+                    }
+                };
+            }
 
             var wordListPath = Path.Combine(App.PluginDirectory, "ContentFilter", "ContentFilter.bin");
-            if (!File.Exists(wordListPath))
-                throw new FileNotFoundException(wordListPath);
-            if (!IsFileHashValid(wordListPath, _hashContentFilterBin))
-                throw new FileLoadException("Hash check failed for ContentFilter.bin");
-
-            _contentFilterWordList = GetWordList(wordListPath);
-            _contentFilterModel = new ContentFilterModelSetViewModel
+            if (File.Exists(wordListPath))
             {
-                Id = Guid.NewGuid(),
-                ModelSet = new FeatureExtractorModelJson
-                {
-                    Name = "ContentFilter",
-                    OnnxModelPath = modelPath
-                }
-            };
+                _contentFilterWordList = GetWordList(wordListPath);
+            }
         }
 
 
@@ -146,18 +142,6 @@ namespace Amuse.UI.Services
                     words.Add(Encoding.UTF8.GetString(wordBytes));
                 }
                 return words.ToArray();
-            }
-        }
-
-
-        private static bool IsFileHashValid(string filePath, string expectedHash)
-        {
-            using (var hashAlgorithm = SHA256.Create())
-            using (var stream = File.OpenRead(filePath))
-            {
-                byte[] hashBytes = hashAlgorithm.ComputeHash(stream);
-                var fileHash = Convert.ToHexString(hashBytes).ToLower();
-                return fileHash.Equals(expectedHash);
             }
         }
 

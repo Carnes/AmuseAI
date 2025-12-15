@@ -330,11 +330,6 @@
                     </Grid.Style>
                 </Grid>
 
-                <!--AMD XDNA™ Super Resolution-->
-                <Grid Visibility="{Binding IsSuperResolutionSupported, Converter={StaticResource BooleanToVisibilityConverter}}" Margin="0,2,0,0">
-                    <CheckBox Content="AMD XDNA™ Super Resolution" IsChecked="{Binding IsSuperResolutionEnabled}" IsEnabled="{Binding SelectedBaseModel, Converter={StaticResource NullBooleanConverter}}" VerticalContentAlignment="Center" />
-                </Grid>
-
             </WrapPanel>
 
         </DockPanel>

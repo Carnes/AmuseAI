@@ -233,18 +233,6 @@
                                             </ComboBox>
                                         </StackPanel>
                                     </Grid>
-                                    <DockPanel.Style>
-                                        <Style TargetType="{x:Type DockPanel}">
-                                            <Setter Property="IsEnabled" Value="True"/>
-                                            <Setter Property="ToolTip" Value="{x:Null}"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding CurrentPipeline.BaseModel.Variant, ElementName=UI}" Value="RyzenAI">
-                                                    <Setter Property="IsEnabled" Value="False"/>
-                                                    <Setter Property="ToolTip" Value="Model does not support dynamic resolutions"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </DockPanel.Style>
                                 </DockPanel>
                             </UniformGrid>
 

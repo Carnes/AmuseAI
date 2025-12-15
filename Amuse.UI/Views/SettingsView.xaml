@@ -330,7 +330,7 @@
                                         </Grid>
                                     </DockPanel>
 
-                                    <!--<DockPanel>
+                                    <DockPanel>
                                         <Grid DockPanel.Dock="Left" MinWidth="200">
                                             <CheckBox Content="Content Moderation" IsChecked="{Binding Settings.IsModelEvaluationModeEnabled, Converter={StaticResource InverseBoolConverter}}" />
                                         </Grid>
@@ -351,7 +351,7 @@
                                         <Grid>
                                             <TextBlock Text="{StaticResource String_Help_StableDiffusionIsPreviewEnabled}" Style="{StaticResource FieldTextBlockStyle}" VerticalAlignment="Center" Margin="10,16,0,0" Visibility="Collapsed"/>
                                         </Grid>
-                                    </DockPanel>-->
+                                    </DockPanel>
 
                                 </StackPanel>
 

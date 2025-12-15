@@ -31,7 +31,6 @@ namespace Amuse.UI.Models
         public int MemoryGB => (int)Math.Round((Memory / 1024f), 0);
         public int MemorySharedGB => (int)Math.Round((MemoryShared / 1024f), 0);
         public string DriverVersion { get;  }
-        public bool IsAMDDevice { get; }
 
         public int Usage{ get; set; }
         public float MemoryUsage { get; set; }

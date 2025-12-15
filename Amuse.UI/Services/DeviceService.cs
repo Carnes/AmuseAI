@@ -22,7 +22,7 @@ namespace Amuse.UI.Services
         private readonly OrtEnvironment _environment;
         private readonly List<Device> _devices = [];
         private Device _baseDevice;
-    
+
         /// <summary>
         /// Initializes a new instance of the <see cref="DeviceService"/> class.
         /// </summary>
@@ -46,48 +46,6 @@ namespace Amuse.UI.Services
         /// Gets the devices.
         /// </summary>
         public IReadOnlyList<Device> Devices => _devices;
-
-
-        /// <summary>
-        /// Gets the hardware profile.
-        /// </summary>
-        /// <param name="settings">The settings.</param>
-        /// <returns></returns>
-        public HardwareProfile GetHardwareProfile()
-        {
-            var deviceCount = Devices.Count;
-            var baseDevice = BaseDevice.Name;
-            var defaultDevice = Devices.FirstOrDefault(x => x.IsDefault);
-            var baseMemoryGB = defaultDevice?.MemoryGB ?? _baseDevice.MemoryGB;
-            var baseDeviceSpecificProfile = _settings.HardwareProfiles
-                .Where(x => x.Devices is not null && x.Devices.Any(d => baseDevice.StartsWith(d, StringComparison.OrdinalIgnoreCase)))
-                .Where(x => x.MinMemory <= baseMemoryGB)
-                .OrderByDescending(x => x.MinMemory)
-                .FirstOrDefault();
-
-            if (baseDeviceSpecificProfile != null)
-                return baseDeviceSpecificProfile;
-
-            // if iGPU and dGPU exist, choose dGPU
-            if (deviceCount > 1)
-                baseDeviceSpecificProfile = null;
-
-            var defaultDeviceSpecificProfile = _settings.HardwareProfiles
-                .Where(x => defaultDevice is not null && x.Devices is not null && x.Devices.Contains(defaultDevice.Name, StringComparer.OrdinalIgnoreCase))
-                .OrderByDescending(x => x.MinMemory)
-                .FirstOrDefault();
-
-            var deviceSpecificProfile = _settings.HardwareProfiles
-               .Where(x => x.Devices is null && x.MinMemory <= _settings.DefaultExecutionDevice.MemoryGB)
-               .OrderByDescending(x => x.MinMemory)
-               .FirstOrDefault();
-
-            var hardwareProfile = baseDeviceSpecificProfile
-                ?? defaultDeviceSpecificProfile
-                ?? deviceSpecificProfile
-                ?? _settings.HardwareProfiles[0];
-            return hardwareProfile;
-        }
 
 
         private void DetectDevices()

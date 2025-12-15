@@ -1,6 +1,5 @@
 ﻿using Amuse.UI.Commands;
 using Amuse.UI.Dialogs;
-using Amuse.UI.Enums;
 using Amuse.UI.Exceptions;
 using Amuse.UI.Helpers;
 using Amuse.UI.Models;
@@ -18,7 +17,6 @@ using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
-using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -48,7 +46,6 @@ namespace Amuse.UI
 
         private readonly ILogger<App> _logger;
         private readonly Splashscreen _splashscreen = new();
-        private UIModeType _selectedUIMode;
         private bool _isGenerating;
         private bool _isUpdateAvailable;
         private AmuseSettings _amuseSettings;
@@ -81,7 +78,6 @@ namespace Amuse.UI
             Initialize(settings);
             _logger = GetService<ILogger<App>>();
             UpdateCommand = new AsyncRelayCommand(UpdateAsync);
-            SwitchModeCommand = new AsyncRelayCommand<UIModeType>(SwitchModeAsync);
             DispatcherUnhandledException += Application_DispatcherUnhandledException;
             AppDomain.CurrentDomain.UnhandledException += AppDomain_UnhandledException;
             TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
@@ -135,9 +131,6 @@ namespace Amuse.UI
 
             // Add Windows
             builder.Services.AddSingleton<MainWindow>();
-            builder.Services.AddSingleton<GenerateWindow>();
-            builder.Services.AddSingleton<CreateWindow>();
-            builder.Services.AddSingleton<ModifyWindow>();
 
             // Dialogs
             builder.Services.AddTransient<MessageDialog>();
@@ -157,13 +150,9 @@ namespace Amuse.UI
             builder.Services.AddTransient<PreviewVideoDialog>();
             builder.Services.AddTransient<AddPromptInputDialog>();
             builder.Services.AddTransient<ModelDownloadDialog>();
-            builder.Services.AddTransient<Dialogs.EZMode.InformationDialog>();
-            builder.Services.AddTransient<Dialogs.EZMode.SettingsDialog>();
-            builder.Services.AddTransient<AppDisclaimer>();
             builder.Services.AddTransient<AppUpdateDialog>();
             builder.Services.AddTransient<CreateVideoDialog>();
             builder.Services.AddTransient<ModelLicenceDialog>();
-            
 
             // Services
             builder.Services.AddSingleton<IModelFactory, ModelFactory>();
@@ -182,13 +171,7 @@ namespace Amuse.UI
         }
 
         public AsyncRelayCommand UpdateCommand { get; set; }
-        public AsyncRelayCommand<UIModeType> SwitchModeCommand { get; }
 
-        public UIModeType SelectedUIMode
-        {
-            get { return _selectedUIMode; }
-            set { _selectedUIMode = value; NotifyPropertyChanged(); }
-        }
 
         public bool IsUpdateAvailable
         {
@@ -235,31 +218,17 @@ namespace Amuse.UI
 
                 // Preload Windows
                 _logger.LogInformation("[OnStartup] - Launch UI...");
-                GetService<GenerateWindow>();
-                GetService<CreateWindow>();
-                GetService<ModifyWindow>();
-                GetService<MainWindow>();
+                var window = GetService<MainWindow>();
 
                 _splashscreen.Close();
-                await SwitchModeAsync(_amuseSettings.UIMode);
+
+                window.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+                await window.ShowAsync(WindowState.Normal);
+                MainWindow = window;
+                window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
                 MainWindow.Activate();
+
                 base.OnStartup(e);
-
-                if (!_amuseSettings.IsAppWarningAccepted)
-                {
-                    var dialogService = GetService<IDialogService>();
-                    var appDisclaimer = dialogService.GetDialog<AppDisclaimer>();
-                    _logger.LogInformation($"[OnStartup] - Show AppDisclaimer dialog");
-                    if (!await appDisclaimer.ShowDialogAsync())
-                    {
-                        _logger.LogInformation($"[OnStartup] - User did not accept disclaimer, Exiting...");
-                        Current.Shutdown();
-                        return;
-                    }
-
-                    _logger.LogInformation($"[OnStartup] - User accepted disclaimer, Continuing...");
-                    _amuseSettings.IsAppWarningAccepted = true;
-                }
 
                 await _amuseSettings.SaveAsync();
                 _amuseSettings.NotifyPropertyChanged(nameof(_amuseSettings.DefaultExecutionDevice));
@@ -339,50 +308,6 @@ namespace Amuse.UI
             _applicationMutex.WaitOne();
             _applicationMutex.ReleaseMutex();
             _applicationMutex.Dispose();
-        }
-
-
-        private async Task SwitchModeAsync(UIModeType type)
-        {
-            _logger.LogInformation($"[SwitchModeAsync] - Switching UIMode {SelectedUIMode} -> {type}");
-
-            SelectedUIMode = type;
-            BaseWindow newView = SelectedUIMode switch
-            {
-                UIModeType.Basic => GetService<GenerateWindow>(),
-                UIModeType.Normal => GetService<MainWindow>(),
-                UIModeType.Paint => GetService<CreateWindow>(),
-                UIModeType.Modify => GetService<ModifyWindow>(),
-                _ => throw new NotImplementedException()
-            };
-
-            if (MainWindow is BaseWindow previousView && previousView.IsLoaded)
-            {
-                previousView.Owner = null;
-                var state = previousView.WindowState;
-                var offsetX = state == WindowState.Normal ? (previousView.ActualWidth - newView.ActualWidth) / 2 : 0;
-                newView.SizeToContent = SizeToContent.Manual;
-                newView.Left = previousView.Left + offsetX;
-                newView.Top = previousView.Top;
-                newView.Owner = previousView;
-                await Task.WhenAll(previousView.HideAsync(), newView.ShowAsync(state));
-                MainWindow = newView;
-                await UpdateUIModeAsync(type);
-                return;
-            }
-
-            newView.WindowStartupLocation = WindowStartupLocation.CenterScreen;
-            await newView.ShowAsync(WindowState.Normal);
-            MainWindow = newView;
-            newView.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-        }
-
-
-        private async Task UpdateUIModeAsync(UIModeType type)
-        {
-            var amuseSettings = GetService<AmuseSettings>();
-            amuseSettings.UIMode = type;
-            await amuseSettings.SaveAsync();
         }
 
 

@@ -84,12 +84,6 @@ namespace Amuse.UI.UserControls
         public static readonly DependencyProperty CurrentPipelineProperty =
             DependencyProperty.Register(nameof(CurrentPipeline), typeof(StableDiffusionPipelineModel), typeof(StableDiffusionPickerControl));
 
-        public static readonly DependencyProperty IsSuperResolutionSupportedProperty =
-            DependencyProperty.Register(nameof(IsSuperResolutionSupported), typeof(bool), typeof(StableDiffusionPickerControl));
-
-        public static readonly DependencyProperty IsSuperResolutionEnabledProperty =
-            DependencyProperty.Register(nameof(IsSuperResolutionEnabled), typeof(bool), typeof(StableDiffusionPickerControl));
-
         public static readonly DependencyProperty IsVideoModelPickerProperty =
             DependencyProperty.Register(nameof(IsVideoModelPicker), typeof(bool), typeof(StableDiffusionPickerControl));
 
@@ -282,32 +276,11 @@ namespace Amuse.UI.UserControls
             set { SetValue(IsUpscalerSupportedProperty, value); }
         }
 
-        /// <summary>
-        /// Gets or sets a value indicating whether this view supports SuperResolution
-        /// </summary>
-        /// <value><c>true</c> if this instance is super resolution supported; otherwise, <c>false</c>.</value>
-        public bool IsSuperResolutionSupported
-        {
-            get { return (bool)GetValue(IsSuperResolutionSupportedProperty); }
-            set { SetValue(IsSuperResolutionSupportedProperty, value); }
-        }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether SuperResolution is enabled.
-        /// </summary>
-        /// <value><c>true</c> if this instance is super resolution enabled; otherwise, <c>false</c>.</value>
-        public bool IsSuperResolutionEnabled
-        {
-            get { return (bool)GetValue(IsSuperResolutionEnabledProperty); }
-            set { SetValue(IsSuperResolutionEnabledProperty, value); }
-        }
-
         public bool IsVideoModelPicker
         {
             get { return (bool)GetValue(IsVideoModelPickerProperty); }
             set { SetValue(IsVideoModelPickerProperty, value); }
         }
-
 
 
         /// <summary>

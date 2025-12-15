@@ -44,9 +44,7 @@
                     SelectedFeatureExtractorModel="{Binding SelectedFeatureExtractorModel, Mode=TwoWay}"
                     CurrentPipeline="{Binding CurrentPipeline, Mode=OneWay}"
                     LoadPipelineCommand="{Binding LoadPipelineCommand, Mode=OneWay}"
-                    UnloadPipelineCommand="{Binding UnloadPipelineCommand, Mode=OneWay}"
-                    IsSuperResolutionSupported="{Binding IsSuperResolutionSupported, Mode=OneWay}"
-                    IsSuperResolutionEnabled="{Binding IsSuperResolutionEnabled, Mode=TwoWay}"/>
+                    UnloadPipelineCommand="{Binding UnloadPipelineCommand, Mode=OneWay}"/>
                 <DockPanel IsEnabled="{Binding CurrentPipeline.IsLoaded, FallbackValue=False, TargetNullValue=False}">
                     <userControls:StableDiffusionInputControl 
                          DiffuserType="ImageToImage" 

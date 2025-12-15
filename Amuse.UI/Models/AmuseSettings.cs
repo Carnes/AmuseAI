@@ -43,8 +43,7 @@ namespace Amuse.UI.Models
             get { return _isUpdateEnabled; }
             set { _isUpdateEnabled = value; NotifyPropertyChanged(); }
         }
-        public bool IsAppWarningAccepted { get; set; }
-        public UIModeType UIMode { get; set; }
+
         public ModelCacheMode ModelCacheMode { get; set; }
         public RenderMode RenderMode { get; set; } = RenderMode.SoftwareOnly;
         public bool UseLegacyDeviceDetection { get; set; }
@@ -105,14 +104,7 @@ namespace Amuse.UI.Models
         public ObservableCollection<PromptInputModel> Prompts { get; set; } = new ObservableCollection<PromptInputModel>();
 
         [AppDefault]
-        public EZModeProfile EZModeProfile { get; set; }
-
-        [AppDefault]
-        public IReadOnlyList<HardwareProfile> HardwareProfiles { get; set; }
-
-        [AppDefault]
         public ObservableCollection<ModelTemplateViewModel> Templates { get; set; } = new ObservableCollection<ModelTemplateViewModel>();
-
         public ObservableCollection<UpscaleModelSetViewModel> UpscaleModelSets { get; set; } = new ObservableCollection<UpscaleModelSetViewModel>();
         public ObservableCollection<StableDiffusionModelSetViewModel> StableDiffusionModelSets { get; set; } = new ObservableCollection<StableDiffusionModelSetViewModel>();
         public ObservableCollection<ControlNetModelSetViewModel> ControlNetModelSets { get; set; } = new ObservableCollection<ControlNetModelSetViewModel>();

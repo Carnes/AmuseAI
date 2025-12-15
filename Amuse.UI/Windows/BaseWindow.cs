@@ -44,7 +44,6 @@ namespace Amuse.UI.Windows
         public AsyncRelayCommand WindowMaximizeCommand { get; }
         public AsyncRelayCommand WindowCloseCommand { get; }
         public bool IsLogCommandEnabled { get; init; }
-        public bool IsUIModeCommandEnabled { get; init; }
 
         public Task ShowAsync(WindowState state)
         {
