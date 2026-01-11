@@ -17,8 +17,10 @@ using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -34,6 +36,8 @@ namespace Amuse.UI
     {
         private static readonly string _version = Utils.GetAppVersion();
         private static readonly string _displayVersion = Utils.GetDisplayVersion();
+        private const string GitHubReleasesApi = "https://api.github.com/repos/Carnes/AmuseAI/releases/latest";
+        private const string GitHubReleasesUrl = "https://github.com/Carnes/AmuseAI/releases";
 
         private static IHost _applicationHost;
         private static Mutex _applicationMutex;
@@ -46,8 +50,10 @@ namespace Amuse.UI
 
         private readonly ILogger<App> _logger;
         private readonly Splashscreen _splashscreen = new();
+        private readonly HttpClient _httpClient;
         private bool _isGenerating;
         private bool _isUpdateAvailable;
+        private string _latestVersion;
         private AmuseSettings _amuseSettings;
         private IFileService _fileService;
         private IDialogService _dialogService;
@@ -65,6 +71,8 @@ namespace Amuse.UI
             }
 
             _cancellationTokenSource = new CancellationTokenSource();
+            _httpClient = new HttpClient();
+            _httpClient.DefaultRequestHeaders.Add("User-Agent", "AmuseAI");
             _baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
             _pluginsDirectory = Path.Combine(_baseDirectory, "Plugins");
             _dataDirectory = GetApplicationDataDirectory();
@@ -233,6 +241,12 @@ namespace Amuse.UI
                 await _amuseSettings.SaveAsync();
                 _amuseSettings.NotifyPropertyChanged(nameof(_amuseSettings.DefaultExecutionDevice));
                 _logger.LogInformation($"[OnStartup] - Amuse {App.Version} successfully started");
+
+                // Check for updates if enabled
+                if (_amuseSettings.IsUpdateEnabled)
+                {
+                    _ = CheckForUpdatesAsync(); // Fire and forget to not block startup
+                }
             }
             catch (Exception ex)
             {
@@ -412,7 +426,66 @@ namespace Amuse.UI
 
         private Task UpdateAsync()
         {
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = GitHubReleasesUrl,
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[UpdateAsync] - Failed to open releases page.");
+            }
             return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Checks for updates from GitHub releases.
+        /// </summary>
+        private async Task CheckForUpdatesAsync()
+        {
+            try
+            {
+                _logger.LogInformation("[CheckForUpdatesAsync] - Checking for updates...");
+
+                var response = await _httpClient.GetAsync(GitHubReleasesApi);
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogWarning("[CheckForUpdatesAsync] - Failed to check for updates. Status: {StatusCode}", response.StatusCode);
+                    return;
+                }
+
+                var json = await response.Content.ReadAsStringAsync();
+                using var document = JsonDocument.Parse(json);
+                var root = document.RootElement;
+
+                if (root.TryGetProperty("tag_name", out var tagElement))
+                {
+                    _latestVersion = tagElement.GetString()?.TrimStart('v', 'V') ?? string.Empty;
+                    var currentVersion = _version.TrimStart('v', 'V');
+
+                    _logger.LogInformation("[CheckForUpdatesAsync] - Current version: {CurrentVersion}, Latest version: {LatestVersion}", currentVersion, _latestVersion);
+
+                    if (System.Version.TryParse(_latestVersion, out var latest) && System.Version.TryParse(currentVersion, out var current))
+                    {
+                        if (latest > current)
+                        {
+                            _logger.LogInformation("[CheckForUpdatesAsync] - Update available: {LatestVersion}", _latestVersion);
+                            IsUpdateAvailable = true;
+                        }
+                        else
+                        {
+                            _logger.LogInformation("[CheckForUpdatesAsync] - Application is up to date.");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[CheckForUpdatesAsync] - Failed to check for updates.");
+            }
         }
 
 

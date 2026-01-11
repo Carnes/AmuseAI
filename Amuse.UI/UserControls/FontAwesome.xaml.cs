@@ -27,7 +27,7 @@ namespace Amuse.UI.UserControls
             DependencyProperty.Register("Color", typeof(Brush), typeof(FontAwesome), new PropertyMetadata(Brushes.Black));
 
         public static readonly DependencyProperty IconStyleProperty =
-            DependencyProperty.Register("IconStyle", typeof(FontAwesomeIconStyle), typeof(FontAwesome), new PropertyMetadata(FontAwesomeIconStyle.SharpLight));
+            DependencyProperty.Register("IconStyle", typeof(FontAwesomeIconStyle), typeof(FontAwesome), new PropertyMetadata(FontAwesomeIconStyle.Solid));
 
         public static readonly DependencyProperty IsSpinnerProperty =
             DependencyProperty.Register("IsSpinner", typeof(bool), typeof(FontAwesome)

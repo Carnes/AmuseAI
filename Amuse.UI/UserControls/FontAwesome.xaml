@@ -18,7 +18,7 @@
                             <Setter Property="FontFamily" Value="{StaticResource FontAwesomeRegular}" />
                         </DataTrigger>
                         <DataTrigger  Binding="{Binding IconStyle}" Value="Light">
-                            <Setter Property="FontFamily" Value="{StaticResource FontAwesomeRegular}" />
+                            <Setter Property="FontFamily" Value="{StaticResource FontAwesomeSolid}" />
                         </DataTrigger>
                         <DataTrigger  Binding="{Binding IconStyle}" Value="Solid">
                             <Setter Property="FontFamily" Value="{StaticResource FontAwesomeSolid}" />

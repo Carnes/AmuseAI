@@ -70,7 +70,7 @@
                         <!--Resize-->
                         <Grid ToolTip="Move/Resize Mode" ToolTipService.InitialShowDelay="200" ToolTipService.ShowOnDisabled="True">
                             <Button Command="{Binding MaskModeCommand}" CommandParameter="{x:Static WindowsControls:InkCanvasEditingMode.None}" >
-                                <userControls:FontAwesome Icon="&#xf5ef;" IconStyle="Light"  >
+                                <userControls:FontAwesome Icon="&#xf0b2;" IconStyle="Solid"  >
                                     <userControls:FontAwesome.Style>
                                         <Style TargetType="{x:Type userControls:FontAwesome}" BasedOn="{StaticResource {x:Type userControls:FontAwesome}}">
                                             <Style.Triggers>

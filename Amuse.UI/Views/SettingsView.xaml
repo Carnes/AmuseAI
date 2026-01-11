@@ -661,7 +661,7 @@
                     <TabItem.Header>
                         <Grid Width="200"  >
                             <DockPanel Opacity=".7">
-                                <userControls:FontAwesome DockPanel.Dock="Top" Icon="&#xf535;" Size="35" IconStyle="SharpThin" HorizontalAlignment="Left" />
+                                <userControls:FontAwesome DockPanel.Dock="Top" Icon="&#xf6d5;" Size="35" IconStyle="Solid" HorizontalAlignment="Left" />
                                 <TextBlock DockPanel.Dock="Top" Text="Made in New Zealand" />
                                 <StackPanel HorizontalAlignment="Left" VerticalAlignment="Bottom"  UseLayoutRounding="True" Orientation="Horizontal">
                                     <TextBlock Text="Created By: " FontStyle="Italic"  FontSize="10" VerticalAlignment="Center" Margin="0,2,0,0" />

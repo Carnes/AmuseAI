@@ -23,7 +23,7 @@
 
                 <Button Style="{StaticResource TransparentButton}" Command="{Binding ChangeLocationCommand}">
                     <StackPanel Orientation="Horizontal" Margin="4, 0">
-                        <controls:FontAwesome Icon="&#xe053;" IconStyle="Thin"/>
+                        <controls:FontAwesome Icon="&#xf07c;" IconStyle="Solid"/>
                         <TextBlock Text="Change Download Location" Margin="4,1,0,0" Opacity=".9"/>
                     </StackPanel>
                 </Button>
