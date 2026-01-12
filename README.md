@@ -4,7 +4,7 @@
 
 # AmuseAI
 
-![Assets/readme/image_gen_squirrel.png](Assets/readme/image_gen_squirrel.png)
+![AmuseAI Screenshot](Assets/readme/image_gen_squirrel.png)
 
 > This project is a fork of [TensorStack-AI/AmuseAI](https://github.com/TensorStack-AI/AmuseAI), with additional contributions from [saddam213/AmuseAI](https://github.com/saddam213/AmuseAI) including removal of extra dependencies, updated CLIP Tokenizer, and refactoring to be DirectML-only.
 
