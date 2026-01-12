@@ -99,8 +99,28 @@
                                         <Button Command="{Binding NewSeedCommand}" BorderThickness="0,1,1,1" ToolTip="New Seed" Width="25">
                                             <userControls:FontAwesome Icon="&#xf051;" IconStyle="Light" Size="15"/>
                                         </Button>
-                                        <Button Command="{Binding RandomSeedCommand}"  BorderThickness="0,1,1,1" ToolTip="Random Seeds">
-                                            <userControls:FontAwesome Icon="&#xf074;" IconStyle="Light"/>
+                                        <Button Command="{Binding RandomSeedCommand}" BorderThickness="0,1,1,1" ToolTip="Random Seed (0 = random each generation)">
+                                            <Button.Style>
+                                                <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding SchedulerOptions.Seed}" Value="0">
+                                                            <Setter Property="Background" Value="{StaticResource AccentColour2}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                            <userControls:FontAwesome Icon="&#xf522;" IconStyle="Solid">
+                                                <userControls:FontAwesome.Style>
+                                                    <Style TargetType="{x:Type userControls:FontAwesome}">
+                                                        <Setter Property="Color" Value="#bababa" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding SchedulerOptions.Seed}" Value="0">
+                                                                <Setter Property="Color" Value="#303030" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </userControls:FontAwesome.Style>
+                                            </userControls:FontAwesome>
                                         </Button>
                                     </UniformGrid>
                                     <StackPanel>
