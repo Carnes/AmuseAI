@@ -2305,7 +2305,7 @@
 
                                         <Button DockPanel.Dock="Right" x:Name="UpdateButton"  Margin="0,0,5,0" ToolTip="Amuse Update Available" Command="{Binding UpdateCommand, Source={x:Static Application.Current}}"  Style="{StaticResource TransparentButton}" Visibility="{Binding IsUpdateAvailable, Source={x:Static Application.Current}, Converter={StaticResource BooleanToVisibilityConverter}}" HorizontalAlignment="Right" WindowChrome.IsHitTestVisibleInChrome="True">
                                             <StackPanel Orientation="Horizontal">
-                                                <userControls:FontAwesome Icon="&#xf30f;" IconStyle="Light" Color="{StaticResource AccentColour2}" Margin="3,0" Size="14"/>
+                                                <userControls:FontAwesome Icon="&#xf019;" IconStyle="Solid" Color="{StaticResource AccentColour2}" Margin="3,0" Size="14"/>
                                                 <TextBlock Text="Update" Foreground="{StaticResource AccentColour2}" Margin="1,0,0,0" FontSize="11"/>
                                             </StackPanel>
                                         </Button>
