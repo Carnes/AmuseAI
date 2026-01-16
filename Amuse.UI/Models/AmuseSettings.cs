@@ -65,6 +65,11 @@ namespace Amuse.UI.Models
         public int RealtimeRefreshRate { get; set; } = 100;
         public bool RealtimeHistoryEnabled { get; set; } = true;
         public int HistoryMaxItems { get; set; } = 5000;
+        public bool ApiIsEnabled { get; set; }
+        public int ApiPort { get; set; } = 5000;
+
+        [JsonIgnore]
+        public string ApiSwaggerUrl => $"http://localhost:{(ApiPort > 0 ? ApiPort : 5000)}/swagger";
 
         public StretchDirection DefaultZoomDirection
         {

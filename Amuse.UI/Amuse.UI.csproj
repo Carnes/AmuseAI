@@ -41,6 +41,13 @@
   </ItemGroup>
 
 
+  <!--ASP.NET Core for REST API-->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="7.2.0" />
+  </ItemGroup>
+
+
   <!--References Debug/Release Modes-->
   <ItemGroup Condition="'$(Configuration)' == 'Debug' OR '$(Configuration)' == 'Release'">
     <PackageReference Include="OnnxStack.Core" Version="0.60.0" />

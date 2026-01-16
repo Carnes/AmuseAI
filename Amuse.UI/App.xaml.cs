@@ -1,6 +1,8 @@
 ﻿using Amuse.UI.Commands;
+using Amuse.UI.Core.Services;
 using Amuse.UI.Dialogs;
 using Amuse.UI.Exceptions;
+using Amuse.UI.Frontends.Api;
 using Amuse.UI.Helpers;
 using Amuse.UI.Models;
 using Amuse.UI.Services;
@@ -17,6 +19,7 @@ using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -47,6 +50,7 @@ namespace Amuse.UI
         private static string _cacheDirectory;
         private static string _pluginsDirectory;
         private static string _logDirectory;
+        private static bool _isHeadlessMode;
 
         private readonly ILogger<App> _logger;
         private readonly Splashscreen _splashscreen = new();
@@ -58,10 +62,16 @@ namespace Amuse.UI
         private IFileService _fileService;
         private IDialogService _dialogService;
         private IHardwareService _hardwareService;
+        private ApiHostService _apiHostService;
         private readonly CancellationTokenSource _cancellationTokenSource;
 
         public App()
         {
+            // Check for headless mode first
+            var args = Environment.GetCommandLineArgs();
+            _isHeadlessMode = args.Contains("--no-ui", StringComparer.OrdinalIgnoreCase) ||
+                              args.Contains("--headless", StringComparer.OrdinalIgnoreCase);
+
             _applicationMutex = new Mutex(false, "Global\\TensorStack_Amuse", out bool isNewInstance);
             if (!isNewInstance)
             {
@@ -99,6 +109,7 @@ namespace Amuse.UI
         public static string TempDirectory => _tempDirectory;
         public static string CacheDirectory => _cacheDirectory;
         public static string LogDirectory => _logDirectory;
+        public static bool IsHeadlessMode => _isHeadlessMode;
 
         /// <summary>
         /// Gets the application data directory, if Installer build use LocalApplicationData, else just executable directory
@@ -130,7 +141,8 @@ namespace Amuse.UI
                 .ReadFrom.Configuration(builder.Configuration)
                 .MinimumLevel.Verbose()
                 .Enrich.FromLogContext()
-                .WriteTo.File(GetLogId(), rollOnFileSizeLimit: true));
+                .WriteTo.File(GetLogId(), rollOnFileSizeLimit: true)
+                .WriteTo.Sink(LogSinkService.Instance));
 
             // Add OnnxStack
             builder.Services.AddOnnxStack();
@@ -174,6 +186,13 @@ namespace Amuse.UI
             builder.Services.AddSingleton<IHardwareService, HardwareService>();
             builder.Services.AddSingleton<IProviderService, ProviderService>();
 
+            // Core Services (shared by all frontends: UI, API, Discord, etc.)
+            builder.Services.AddSingleton<IGenerationService, GenerationService>();
+            builder.Services.AddSingleton<IJobQueueService, JobQueueService>();
+
+            // API Frontend (manually controlled based on ApiIsEnabled setting)
+            builder.Services.AddSingleton<ApiHostService>();
+
             // Build App
             _applicationHost = builder.Build();
         }
@@ -202,7 +221,7 @@ namespace Amuse.UI
         {
             try
             {
-                _logger.LogInformation("[OnStartup] - ApplicationHost Starting...");
+                _logger.LogInformation("[OnStartup] - ApplicationHost Starting... (Headless: {IsHeadless})", _isHeadlessMode);
                 await _applicationHost.StartAsync();
 
                 // Load Config
@@ -212,10 +231,6 @@ namespace Amuse.UI
                 _fileService = GetService<IFileService>();
                 _dialogService = GetService<IDialogService>();
 
-                // Set RenderMode
-                RenderOptions.ProcessRenderMode = _amuseSettings.RenderMode;
-
-                var launchCrashReport = !_amuseSettings.HasExited;
                 _amuseSettings.HasExited = false;
                 settings.TempPath = _tempDirectory;
                 VideoHelper.SetConfiguration(settings);
@@ -223,6 +238,32 @@ namespace Amuse.UI
                 _logger.LogInformation("[OnStartup] - Query Device Configuration...");
                 _hardwareService = GetService<IHardwareService>();
                 GetService<IDeviceService>();
+
+                // Get API service for manual control
+                _apiHostService = GetService<ApiHostService>();
+
+                // In headless mode, skip UI initialization but always start API
+                if (_isHeadlessMode)
+                {
+                    _splashscreen.Close();
+                    _logger.LogInformation("[OnStartup] - Running in headless API mode");
+                    await _apiHostService.StartAsync(CancellationToken.None);
+                    _logger.LogInformation($"[OnStartup] - Amuse {App.Version} started in headless mode");
+
+                    // Keep app running without UI
+                    base.OnStartup(e);
+                    return;
+                }
+
+                // Start API if enabled
+                if (_amuseSettings.ApiIsEnabled)
+                {
+                    _logger.LogInformation("[OnStartup] - Starting API server (enabled in settings)...");
+                    await _apiHostService.StartAsync(CancellationToken.None);
+                }
+
+                // Set RenderMode (only in UI mode)
+                RenderOptions.ProcessRenderMode = _amuseSettings.RenderMode;
 
                 // Preload Windows
                 _logger.LogInformation("[OnStartup] - Launch UI...");
@@ -316,6 +357,13 @@ namespace Amuse.UI
             _amuseSettings.HasExited = true;
             await _amuseSettings.SaveAsync();
             await _fileService.DeleteTempFiles();
+
+            // Stop API server if running
+            if (_apiHostService?.IsRunning == true)
+            {
+                await _apiHostService.StopAsync(CancellationToken.None);
+            }
+
             await _applicationHost.StopAsync();
             await _cancellationTokenSource.CancelAsync();
             _applicationHost.Dispose();

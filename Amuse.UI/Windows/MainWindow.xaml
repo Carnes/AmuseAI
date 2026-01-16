@@ -366,6 +366,16 @@
                 <views:ModelManagerView Settings="{Binding Settings}" DefaultExecutionDevice="{Binding Settings.DefaultExecutionDevice}" Margin="0,2,0,0"/>
             </TabItem>
 
+            <!--API-->
+            <TabItem>
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal" Margin="5">
+                        <controls:FontAwesome Icon="&#xf542;" IconStyle="Solid" Color="{StaticResource AccentColour2}" Size="16"/>
+                        <TextBlock Text="API" FontSize="13" HorizontalAlignment="Center" Margin="5,0"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <views:ApiView Settings="{Binding Settings}" Margin="0,2,0,0"/>
+            </TabItem>
 
             <!--Settings Window-->
             <TabItem DockPanel.Dock="Right" HorizontalAlignment="Right" Width="114" Margin="0,-2,1,0">
@@ -390,10 +400,10 @@
                 <Style TargetType="{x:Type Grid}">
                     <Setter Property="Width" Value="124" />
                     <Style.Triggers>
-                        <DataTrigger Binding="{Binding NavigationMenuIndex, ElementName=UI}" Value="3" >
+                        <DataTrigger Binding="{Binding NavigationMenuIndex, ElementName=UI}" Value="4" >
                             <Setter Property="Visibility" Value="Hidden" />
                         </DataTrigger>
-                        <DataTrigger Binding="{Binding NavigationMenuIndex, ElementName=UI}" Value="4" >
+                        <DataTrigger Binding="{Binding NavigationMenuIndex, ElementName=UI}" Value="5" >
                             <Setter Property="Visibility" Value="Hidden" />
                         </DataTrigger>
                     </Style.Triggers>

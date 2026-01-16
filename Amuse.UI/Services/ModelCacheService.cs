@@ -12,9 +12,11 @@ using OnnxStack.StableDiffusion.Enums;
 using OnnxStack.StableDiffusion.Models;
 using OnnxStack.StableDiffusion.Pipelines;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Amuse.UI.Services
@@ -24,33 +26,47 @@ namespace Amuse.UI.Services
         private readonly AmuseSettings _settings;
         private readonly ILogger<ModelCacheService> _logger;
         private readonly IProviderService _providerService;
-        private readonly Dictionary<UpscaleModelSetViewModel, ImageUpscalePipeline> _upscalePipelines;
-        private readonly Dictionary<ControlNetModelSetViewModel, ControlNetModel> _controlnetPipelines;
-        private readonly Dictionary<StableDiffusionModelSetViewModel, IPipeline> _stableDiffusionPipelines;
-        private readonly Dictionary<FeatureExtractorModelSetViewModel, FeatureExtractorPipeline> _featureExtractorPipelines;
-        private readonly Dictionary<ContentFilterModelSetViewModel, ContentFilterPipeline> _filterPipelines;
+        private readonly ConcurrentDictionary<UpscaleModelSetViewModel, ImageUpscalePipeline> _upscalePipelines;
+        private readonly ConcurrentDictionary<ControlNetModelSetViewModel, ControlNetModel> _controlnetPipelines;
+        private readonly ConcurrentDictionary<StableDiffusionModelSetViewModel, IPipeline> _stableDiffusionPipelines;
+        private readonly ConcurrentDictionary<FeatureExtractorModelSetViewModel, FeatureExtractorPipeline> _featureExtractorPipelines;
+        private readonly ConcurrentDictionary<ContentFilterModelSetViewModel, ContentFilterPipeline> _filterPipelines;
+
+        // Semaphores to prevent concurrent model loading (models can only be loaded one at a time)
+        private readonly SemaphoreSlim _sdLoadLock = new(1, 1);
+        private readonly SemaphoreSlim _upscaleLoadLock = new(1, 1);
+        private readonly SemaphoreSlim _controlnetLoadLock = new(1, 1);
+        private readonly SemaphoreSlim _featureExtractorLoadLock = new(1, 1);
+        private readonly SemaphoreSlim _filterLoadLock = new(1, 1);
 
         public ModelCacheService(AmuseSettings settings, IProviderService providerService, ILogger<ModelCacheService> logger)
         {
             _logger = logger;
             _settings = settings;
             _providerService = providerService;
-            _upscalePipelines = new Dictionary<UpscaleModelSetViewModel, ImageUpscalePipeline>();
-            _controlnetPipelines = new Dictionary<ControlNetModelSetViewModel, ControlNetModel>();
-            _stableDiffusionPipelines = new Dictionary<StableDiffusionModelSetViewModel, IPipeline>();
-            _featureExtractorPipelines = new Dictionary<FeatureExtractorModelSetViewModel, FeatureExtractorPipeline>();
-            _filterPipelines = new Dictionary<ContentFilterModelSetViewModel, ContentFilterPipeline>();
+            _upscalePipelines = new ConcurrentDictionary<UpscaleModelSetViewModel, ImageUpscalePipeline>();
+            _controlnetPipelines = new ConcurrentDictionary<ControlNetModelSetViewModel, ControlNetModel>();
+            _stableDiffusionPipelines = new ConcurrentDictionary<StableDiffusionModelSetViewModel, IPipeline>();
+            _featureExtractorPipelines = new ConcurrentDictionary<FeatureExtractorModelSetViewModel, FeatureExtractorPipeline>();
+            _filterPipelines = new ConcurrentDictionary<ContentFilterModelSetViewModel, ContentFilterPipeline>();
         }
 
 
         public async Task<IPipeline> LoadModelAsync(StableDiffusionModelSetViewModel model, bool isControlNet)
         {
+            if (model == null)
+                return null;
+
+            // Fast path: check if already loaded
+            if (_stableDiffusionPipelines.TryGetValue(model, out var pipeline))
+                return pipeline;
+
+            // Acquire lock for loading
+            await _sdLoadLock.WaitAsync();
             try
             {
-                if (model == null)
-                    return null;
-
-                if (_stableDiffusionPipelines.TryGetValue(model, out var pipeline))
+                // Double-check after acquiring lock
+                if (_stableDiffusionPipelines.TryGetValue(model, out pipeline))
                     return pipeline;
 
                 if (_settings.ModelCacheMode == ModelCacheMode.Single)
@@ -64,8 +80,7 @@ namespace Amuse.UI.Services
                 model.IsLoading = true;
                 model.IsLoaded = false;
                 pipeline = CreatePipeline(model);
-                //await pipeline.LoadAsync(unetMode);
-                _stableDiffusionPipelines.Add(model, pipeline);
+                _stableDiffusionPipelines[model] = pipeline;
                 model.IsLoaded = true;
                 model.IsLoading = false;
                 return pipeline;
@@ -76,17 +91,25 @@ namespace Amuse.UI.Services
                 model.IsLoading = false;
                 throw;
             }
+            finally
+            {
+                _sdLoadLock.Release();
+            }
         }
 
 
         public async Task<ControlNetModel> LoadModelAsync(ControlNetModelSetViewModel model)
         {
+            if (model == null)
+                return null;
+
+            if (_controlnetPipelines.TryGetValue(model, out var pipeline))
+                return pipeline;
+
+            await _controlnetLoadLock.WaitAsync();
             try
             {
-                if (model == null)
-                    return null;
-
-                if (_controlnetPipelines.TryGetValue(model, out var pipeline))
+                if (_controlnetPipelines.TryGetValue(model, out pipeline))
                     return pipeline;
 
                 if (_settings.ModelCacheMode == ModelCacheMode.Single)
@@ -100,8 +123,7 @@ namespace Amuse.UI.Services
                 model.IsLoaded = false;
 
                 pipeline = CreatePipeline(model);
-                //await pipeline.LoadAsync();
-                _controlnetPipelines.Add(model, pipeline);
+                _controlnetPipelines[model] = pipeline;
 
                 model.IsLoaded = true;
                 model.IsLoading = false;
@@ -113,17 +135,25 @@ namespace Amuse.UI.Services
                 model.IsLoading = false;
                 throw;
             }
+            finally
+            {
+                _controlnetLoadLock.Release();
+            }
         }
 
 
         public async Task<ImageUpscalePipeline> LoadModelAsync(UpscaleModelSetViewModel model)
         {
+            if (model == null)
+                return null;
+
+            if (_upscalePipelines.TryGetValue(model, out var pipeline))
+                return pipeline;
+
+            await _upscaleLoadLock.WaitAsync();
             try
             {
-                if (model == null)
-                    return null;
-
-                if (_upscalePipelines.TryGetValue(model, out var pipeline))
+                if (_upscalePipelines.TryGetValue(model, out pipeline))
                     return pipeline;
 
                 if (_settings.ModelCacheMode == ModelCacheMode.Single)
@@ -138,8 +168,7 @@ namespace Amuse.UI.Services
                 model.IsLoaded = false;
 
                 pipeline = CreatePipeline(model);
-                // await pipeline.LoadAsync();
-                _upscalePipelines.Add(model, pipeline);
+                _upscalePipelines[model] = pipeline;
 
                 model.IsLoaded = true;
                 model.IsLoading = false;
@@ -151,17 +180,25 @@ namespace Amuse.UI.Services
                 model.IsLoading = false;
                 throw;
             }
+            finally
+            {
+                _upscaleLoadLock.Release();
+            }
         }
 
 
         public async Task<FeatureExtractorPipeline> LoadModelAsync(FeatureExtractorModelSetViewModel model)
         {
+            if (model == null)
+                return null;
+
+            if (_featureExtractorPipelines.TryGetValue(model, out var pipeline))
+                return pipeline;
+
+            await _featureExtractorLoadLock.WaitAsync();
             try
             {
-                if (model == null)
-                    return null;
-
-                if (_featureExtractorPipelines.TryGetValue(model, out var pipeline))
+                if (_featureExtractorPipelines.TryGetValue(model, out pipeline))
                     return pipeline;
 
                 if (_settings.ModelCacheMode == ModelCacheMode.Single)
@@ -176,8 +213,7 @@ namespace Amuse.UI.Services
                 model.IsLoaded = false;
 
                 pipeline = CreatePipeline(model);
-                //await pipeline.LoadAsync();
-                _featureExtractorPipelines.Add(model, pipeline);
+                _featureExtractorPipelines[model] = pipeline;
 
                 model.IsLoaded = true;
                 model.IsLoading = false;
@@ -189,17 +225,25 @@ namespace Amuse.UI.Services
                 model.IsLoading = false;
                 throw;
             }
+            finally
+            {
+                _featureExtractorLoadLock.Release();
+            }
         }
 
 
         public async Task<ContentFilterPipeline> LoadModelAsync(ContentFilterModelSetViewModel model)
         {
+            if (model == null)
+                return null;
+
+            if (_filterPipelines.TryGetValue(model, out var pipeline))
+                return pipeline;
+
+            await _filterLoadLock.WaitAsync();
             try
             {
-                if (model == null)
-                    return null;
-
-                if (_filterPipelines.TryGetValue(model, out var pipeline))
+                if (_filterPipelines.TryGetValue(model, out pipeline))
                     return pipeline;
 
                 foreach (var key in _filterPipelines.Keys.ToArray())
@@ -211,8 +255,7 @@ namespace Amuse.UI.Services
                 model.IsLoaded = false;
 
                 pipeline = CreatePipeline(model);
-                // await pipeline.LoadAsync();
-                _filterPipelines.Add(model, pipeline);
+                _filterPipelines[model] = pipeline;
 
                 model.IsLoaded = true;
                 model.IsLoading = false;
@@ -223,6 +266,10 @@ namespace Amuse.UI.Services
                 model.IsLoaded = false;
                 model.IsLoading = false;
                 throw;
+            }
+            finally
+            {
+                _filterLoadLock.Release();
             }
         }
 
