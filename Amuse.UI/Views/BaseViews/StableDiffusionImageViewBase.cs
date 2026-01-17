@@ -1,4 +1,6 @@
 ﻿using Amuse.UI.Commands;
+using Amuse.UI.Core.Models;
+using Amuse.UI.Core.Services;
 using Amuse.UI.Dialogs;
 using Amuse.UI.Models;
 using Amuse.UI.Models.StableDiffusion;
@@ -13,6 +15,7 @@ using OnnxStack.StableDiffusion.Enums;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -37,6 +40,7 @@ namespace Amuse.UI.Views
         private OnnxImage _inputControlImageCached;
         private BitmapSource _previewResult;
         private ImageInput _sourceImage;
+        private IJobQueueService _jobQueueService;
 
         public StableDiffusionImageViewBase()
         {
@@ -50,9 +54,46 @@ namespace Amuse.UI.Views
             PreviewImageCommand = new AsyncRelayCommand<ImageResult>(PreviewImage);
             UpdateSeedCommand = new AsyncRelayCommand<int>(UpdateSeed);
             PromptOptions = new PromptOptionsModel();
-            SchedulerOptions = new SchedulerOptionsModel();
+            SchedulerOptions = CreateSchedulerOptionsFromDefaults();
             BatchOptions = new BatchOptionsModel();
             ImageResults = new ObservableCollection<ImageResult>();
+
+            // Subscribe to API job completions for history integration
+            if (!DesignerProperties.GetIsInDesignMode(this))
+            {
+                _jobQueueService = App.GetService<IJobQueueService>();
+                if (_jobQueueService != null)
+                {
+                    _jobQueueService.JobCompleted += OnApiJobCompleted;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Creates a SchedulerOptionsModel initialized with app-wide generation defaults.
+        /// </summary>
+        private static SchedulerOptionsModel CreateSchedulerOptionsFromDefaults()
+        {
+            var model = new SchedulerOptionsModel();
+
+            // Apply app-wide defaults if available
+            var settings = App.GetService<AmuseSettings>();
+            var defaults = settings?.GenerationDefaults;
+            if (defaults != null)
+            {
+                if (defaults.DefaultWidth > 0)
+                    model.Width = defaults.DefaultWidth;
+                if (defaults.DefaultHeight > 0)
+                    model.Height = defaults.DefaultHeight;
+                if (defaults.DefaultSteps > 0)
+                    model.InferenceSteps = defaults.DefaultSteps;
+                if (defaults.DefaultGuidanceScale > 0)
+                    model.GuidanceScale = defaults.DefaultGuidanceScale;
+            }
+
+            // Reset HasChanged since we just initialized
+            model.HasChanged = false;
+            return model;
         }
 
         public AsyncRelayCommand CancelCommand { get; }
@@ -204,11 +245,20 @@ namespace Amuse.UI.Views
         /// </summary>
         protected virtual async Task Generate()
         {
+            IDisposable generationLock = null;
             try
             {
                 ResultImage = null;
                 IsGenerating = true;
                 ImageResults.Add(new ImageResult());
+
+                // Acquire generation lock to prevent concurrent GPU access with API jobs
+                if (_jobQueueService != null)
+                {
+                    UpdateProgress("Waiting for generation lock...");
+                    generationLock = await _jobQueueService.AcquireGenerationLockAsync();
+                }
+
                 using (CancelationTokenSource = new CancellationTokenSource())
                 {
                     if (await ModeratorService.ContainsExplicitContentAsync(PromptOptions.Prompt))
@@ -277,6 +327,10 @@ namespace Amuse.UI.Views
                 Logger.LogError("Error during Generate\n{ex}", ex);
                 await App.UIInvokeAsync(() => DialogService.ShowErrorMessageAsync("Generate Error", ex.Message));
                 await UnloadPipelineAsync();
+            }
+            finally
+            {
+                generationLock?.Dispose();
             }
             Reset();
         }
@@ -444,6 +498,88 @@ namespace Amuse.UI.Views
                 ClearStatistics();
             }
             return Task.CompletedTask;
+        }
+
+
+        /// <summary>
+        /// Handles API job completion events for history integration.
+        /// Adds API-generated images to this view's history if the diffuser type matches.
+        /// </summary>
+        private async void OnApiJobCompleted(object sender, JobCompletedEventArgs e)
+        {
+            // Only process API jobs
+            if (e.Source != "API")
+                return;
+
+            // Check if this view handles this diffuser type
+            if (SupportedDiffusers == null || !SupportedDiffusers.Contains(e.Result.DiffuserType))
+                return;
+
+            // Ensure we have the OnnxImage
+            if (e.Result.OnnxImage == null)
+                return;
+
+            try
+            {
+                // Create ImageResult on the UI thread
+                await App.UIInvokeAsync(async () =>
+                {
+                    // Find the model by name to create a Pipeline reference
+                    var modelViewModel = Settings?.StableDiffusionModelSets?
+                        .FirstOrDefault(m => m.Name.Equals(e.Result.ModelName, StringComparison.OrdinalIgnoreCase));
+
+                    if (modelViewModel == null)
+                    {
+                        Logger?.LogWarning("[API History] Could not find model '{ModelName}' for history entry", e.Result.ModelName);
+                        return;
+                    }
+
+                    // Create a minimal pipeline for history display
+                    var pipeline = new StableDiffusionPipelineModel(
+                        Settings,
+                        modelViewModel,
+                        null, // ControlNet
+                        null, // Upscale
+                        null, // FeatureExtractor
+                        null  // ContentFilter
+                    );
+
+                    var imageResult = new ImageResult
+                    {
+                        Image = await e.Result.OnnxImage.ToBitmapAsync(),
+                        OnnxImage = e.Result.OnnxImage,
+                        Pipeline = pipeline,
+                        PromptOptions = e.Result.GenerateOptions,
+                        PipelineType = e.Result.PipelineType,
+                        DiffuserType = e.Result.DiffuserType,
+                        SchedulerOptions = e.Result.GenerateOptions?.SchedulerOptions ?? new SchedulerOptions
+                        {
+                            Seed = e.Result.Seed,
+                            Width = e.Result.Width,
+                            Height = e.Result.Height,
+                            InferenceSteps = e.Result.InferenceSteps,
+                            GuidanceScale = e.Result.GuidanceScale
+                        },
+                        Elapsed = e.Result.ElapsedSeconds
+                    };
+
+                    // Add to history with size limit enforcement
+                    if (ImageResults.Count > Settings.HistoryMaxItems)
+                        ImageResults.RemoveAt(0);
+
+                    ImageResults.Add(imageResult);
+
+                    // Auto-save if enabled
+                    await FileService.AutoSaveImageFile(imageResult, $"API_{e.Result.DiffuserType}");
+
+                    Logger?.LogInformation("[API History] Added API job {JobId} to {ViewType} history",
+                        e.JobId, GetType().Name);
+                });
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "[API History] Failed to add API job {JobId} to history", e.JobId);
+            }
         }
 
 

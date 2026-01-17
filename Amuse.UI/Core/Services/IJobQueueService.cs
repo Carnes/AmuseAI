@@ -86,5 +86,25 @@ namespace Amuse.UI.Core.Services
         /// Event raised when a job's progress updates.
         /// </summary>
         event EventHandler<JobProgressEventArgs> JobProgressChanged;
+
+        /// <summary>
+        /// Event raised when a job completes successfully with its result.
+        /// Used for UI history integration.
+        /// </summary>
+        event EventHandler<JobCompletedEventArgs> JobCompleted;
+
+        /// <summary>
+        /// Acquires the generation lock. Only one generation can run at a time.
+        /// Both UI and API should acquire this before generating.
+        /// The returned IDisposable releases the lock when disposed.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>A disposable that releases the lock when disposed.</returns>
+        Task<IDisposable> AcquireGenerationLockAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Returns true if the generation lock is currently held.
+        /// </summary>
+        bool IsGenerationLockHeld { get; }
     }
 }

@@ -16,9 +16,35 @@ namespace Amuse.UI.Core.Services
         public string PipelineType { get; init; }
         public int DefaultWidth { get; init; }
         public int DefaultHeight { get; init; }
+        public int MinDimension { get; init; }
+        public int MaxDimension { get; init; }
+        public int DimensionMultiple { get; init; }
         public IReadOnlyList<string> SupportedSchedulers { get; init; }
         public IReadOnlyList<string> SupportedDiffusers { get; init; }
         public bool IsLoaded { get; init; }
+    }
+
+    /// <summary>
+    /// Result of dimension validation.
+    /// </summary>
+    public class DimensionValidationResult
+    {
+        public bool IsValid { get; init; }
+        public string ErrorMessage { get; init; }
+        public int MinDimension { get; init; }
+        public int MaxDimension { get; init; }
+        public int DimensionMultiple { get; init; }
+
+        public static DimensionValidationResult Success() => new() { IsValid = true };
+
+        public static DimensionValidationResult Error(string message, int min, int max, int multiple) => new()
+        {
+            IsValid = false,
+            ErrorMessage = message,
+            MinDimension = min,
+            MaxDimension = max,
+            DimensionMultiple = multiple
+        };
     }
 
     /// <summary>
@@ -105,5 +131,10 @@ namespace Amuse.UI.Core.Services
         /// Preload a model into cache.
         /// </summary>
         Task PreloadModelAsync(string modelName, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Validate that the specified dimensions are supported by the model.
+        /// </summary>
+        DimensionValidationResult ValidateDimensions(string modelName, int width, int height);
     }
 }

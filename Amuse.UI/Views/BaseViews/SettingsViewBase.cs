@@ -8,6 +8,7 @@ using Amuse.UI.Models.Upscale;
 using Amuse.UI.Services;
 using Microsoft.Extensions.Logging;
 using OnnxStack.Core.Config;
+using OnnxStack.StableDiffusion.Enums;
 using System;
 using System.ComponentModel;
 using System.Linq;
@@ -30,6 +31,8 @@ namespace Amuse.UI.Views
         private UpscaleModelSetViewModel _selectedUpscaleModel;
         private PromptInputModel _selectedPromptInputModel;
         private OnnxStackConfig _onnxStackConfig;
+        private bool _isSaving;
+        private string _saveStatusMessage;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SettingsViewBase"/> class.
@@ -134,6 +137,45 @@ namespace Amuse.UI.Views
             set { _selectedPromptInputModel = value; NotifyPropertyChanged(); }
         }
 
+        public bool IsSaving
+        {
+            get { return _isSaving; }
+            set { _isSaving = value; NotifyPropertyChanged(); }
+        }
+
+        public string SaveStatusMessage
+        {
+            get { return _saveStatusMessage; }
+            set { _saveStatusMessage = value; NotifyPropertyChanged(); }
+        }
+
+        /// <summary>
+        /// Gets or sets the selected default scheduler type for generation defaults.
+        /// Converts between the enum and string stored in settings.
+        /// </summary>
+        public SchedulerType? SelectedDefaultSchedulerType
+        {
+            get
+            {
+                var schedulerName = Settings?.GenerationDefaults?.DefaultSchedulerType;
+                if (string.IsNullOrEmpty(schedulerName))
+                    return null;
+
+                if (Enum.TryParse<SchedulerType>(schedulerName, out var result))
+                    return result;
+
+                return null;
+            }
+            set
+            {
+                if (Settings?.GenerationDefaults != null)
+                {
+                    Settings.GenerationDefaults.DefaultSchedulerType = value?.ToString();
+                    NotifyPropertyChanged();
+                }
+            }
+        }
+
         /// <summary>
         /// Shoulds unload model.
         /// </summary>
@@ -207,11 +249,35 @@ namespace Amuse.UI.Views
         {
             try
             {
+                IsSaving = true;
+                SaveStatusMessage = "Saving...";
+                _logger.LogInformation($"Saving settings to {App.DataDirectory}");
+
                 await Settings.SaveAsync();
+
+                SaveStatusMessage = $"Saved to {App.DataDirectory}";
+                _logger.LogInformation("Settings saved successfully");
+
+                // Clear the message after 3 seconds
+                _ = Task.Run(async () =>
+                {
+                    await Task.Delay(3000);
+                    await App.UIInvokeAsync(() =>
+                    {
+                        if (SaveStatusMessage?.StartsWith("Saved") == true)
+                            SaveStatusMessage = string.Empty;
+                        return Task.CompletedTask;
+                    });
+                });
             }
             catch (Exception ex)
             {
+                SaveStatusMessage = $"Error: {ex.Message}";
                 _logger.LogError($"Error saving configuration file, {ex.Message}");
+            }
+            finally
+            {
+                IsSaving = false;
             }
         }
 

@@ -85,7 +85,21 @@ namespace Amuse.UI
             _httpClient.DefaultRequestHeaders.Add("User-Agent", "AmuseAI");
             _baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
             _pluginsDirectory = Path.Combine(_baseDirectory, "Plugins");
+#if DEBUG
+            // Use AppData in Debug builds so settings persist across build cleans
+            _dataDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Amuse");
+            Directory.CreateDirectory(_dataDirectory);
+            var debugSettings = Path.Combine(_dataDirectory, "appsettings.json");
+            var sourceDefaults = Path.Combine(_baseDirectory, "appdefaults.json");
+            // If no appsettings.json exists yet, copy appdefaults.json so LoadSettings can create one
+            if (!File.Exists(debugSettings) && File.Exists(sourceDefaults))
+            {
+                var debugDefaults = Path.Combine(_dataDirectory, "appdefaults.json");
+                File.Copy(sourceDefaults, debugDefaults, true);
+            }
+#else
             _dataDirectory = GetApplicationDataDirectory();
+#endif
             _tempDirectory = Path.Combine(_dataDirectory, "Temp");
             _cacheDirectory = Path.Combine(_dataDirectory, "Cache");
             _logDirectory = Path.Combine(_dataDirectory, "Logs");

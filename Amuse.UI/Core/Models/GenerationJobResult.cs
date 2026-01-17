@@ -1,3 +1,7 @@
+using OnnxStack.Core.Image;
+using OnnxStack.StableDiffusion.Config;
+using OnnxStack.StableDiffusion.Enums;
+
 namespace Amuse.UI.Core.Models
 {
     /// <summary>
@@ -63,5 +67,27 @@ namespace Amuse.UI.Core.Models
         /// Guidance scale used.
         /// </summary>
         public float GuidanceScale { get; init; }
+
+        /// <summary>
+        /// The OnnxImage result for UI history integration.
+        /// Only populated when running with UI (not headless).
+        /// </summary>
+        public OnnxImage OnnxImage { get; init; }
+
+        /// <summary>
+        /// The generation options used (prompt, negative prompt, scheduler options).
+        /// Used for UI history to allow regeneration with same settings.
+        /// </summary>
+        public GenerateOptions GenerateOptions { get; init; }
+
+        /// <summary>
+        /// The diffuser type used (TextToImage, ImageToImage, etc.).
+        /// </summary>
+        public DiffuserType DiffuserType { get; init; }
+
+        /// <summary>
+        /// The pipeline type (StableDiffusion, SDXL, Flux, etc.).
+        /// </summary>
+        public PipelineType PipelineType { get; init; }
     }
 }

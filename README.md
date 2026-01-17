@@ -85,6 +85,34 @@ Enhance video resolution using AI upscaling.
 #### Video Feature Extractor
 Extract features from video for use in other workflows.
 
+### REST API
+
+AmuseAI includes an optional REST API for programmatic image generation, enabling integration with external applications and automation workflows.
+
+#### Enabling the API
+1. Go to **Settings > Api**
+2. Check "Enable API"
+3. Configure the port (default: 5000)
+4. Restart the application
+
+#### API Endpoints
+- `POST /api/generate/text-to-image` - Queue a text-to-image generation job
+- `POST /api/generate/upscale` - Queue an image upscale job
+- `GET /api/jobs/{id}` - Get job status and progress
+- `GET /api/jobs/{id}/result` - Download the generated image (PNG)
+- `GET /api/jobs/{id}/wait` - Long-poll until job completes
+- `GET /api/models` - List available models
+- `GET /api/health` - Health check
+- `GET /swagger` - Interactive API documentation
+
+#### API Monitoring
+When the API is enabled, an "Api" tab appears in the main navigation showing:
+- Real-time job queue with status indicators
+- Scrolling log viewer with color-coded messages
+- API status indicator (running/stopped)
+
+Images generated via the API automatically appear in the UI's history view.
+
 ## Settings
 
 ### Content Moderation

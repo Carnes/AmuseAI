@@ -71,6 +71,11 @@ namespace Amuse.UI.Models
         [JsonIgnore]
         public string ApiSwaggerUrl => $"http://localhost:{(ApiPort > 0 ? ApiPort : 5000)}/swagger";
 
+        /// <summary>
+        /// Default generation settings used by API (when parameters omitted) and UI (initial values).
+        /// </summary>
+        public GenerationDefaultSettings GenerationDefaults { get; set; } = new GenerationDefaultSettings();
+
         public StretchDirection DefaultZoomDirection
         {
             get { return _defaultZoomDirection; }

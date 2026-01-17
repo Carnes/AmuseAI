@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 using Amuse.UI.Commands;
 using Amuse.UI.Core.Models;
 using Amuse.UI.Core.Services;
@@ -20,7 +21,9 @@ namespace Amuse.UI.Views
     {
         private readonly IJobQueueService _jobQueueService;
         private readonly ApiHostService _apiHostService;
+        private readonly DispatcherTimer _lockStatusTimer;
         private GenerationJob _selectedJob;
+        private bool _isUiGenerating;
 
         public ApiView()
         {
@@ -42,6 +45,15 @@ namespace Amuse.UI.Views
 
             // Refresh API status when view is loaded
             Loaded += OnLoaded;
+            Unloaded += OnUnloaded;
+
+            // Timer to poll generation lock status for UI indicator
+            _lockStatusTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(500)
+            };
+            _lockStatusTimer.Tick += OnLockStatusTimerTick;
+            _lockStatusTimer.Start();
 
             ClearCompletedCommand = new AsyncRelayCommand(ClearCompleted);
             ClearLogsCommand = new AsyncRelayCommand(ClearLogs);
@@ -52,6 +64,26 @@ namespace Amuse.UI.Views
             // Refresh API status properties
             NotifyPropertyChanged(nameof(IsApiRunning));
             NotifyPropertyChanged(nameof(ListeningUrl));
+            _lockStatusTimer?.Start();
+        }
+
+        private void OnUnloaded(object sender, RoutedEventArgs e)
+        {
+            _lockStatusTimer?.Stop();
+        }
+
+        private void OnLockStatusTimerTick(object sender, EventArgs e)
+        {
+            // UI is generating when lock is held but no API job is processing
+            var isUiGenerating = _jobQueueService != null
+                && _jobQueueService.IsGenerationLockHeld
+                && !_jobQueueService.IsProcessing;
+
+            if (_isUiGenerating != isUiGenerating)
+            {
+                _isUiGenerating = isUiGenerating;
+                NotifyPropertyChanged(nameof(IsUiGenerating));
+            }
         }
 
         public AmuseSettings Settings
@@ -82,6 +114,8 @@ namespace Amuse.UI.Views
         public bool IsApiRunning => _apiHostService?.IsRunning ?? false;
 
         public string ListeningUrl => _apiHostService?.ListeningUrl ?? string.Empty;
+
+        public bool IsUiGenerating => _isUiGenerating;
 
         private void OnJobStatusChanged(object sender, JobStatusChangedEventArgs e)
         {
@@ -149,6 +183,14 @@ namespace Amuse.UI.Views
             if (sender is System.Windows.Controls.TextBlock textBlock && textBlock.Tag is Guid jobId)
             {
                 Clipboard.SetText(jobId.ToString());
+            }
+        }
+
+        private void LogEntry_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (sender is System.Windows.Controls.TextBlock textBlock && textBlock.Tag is string message)
+            {
+                Clipboard.SetText(message);
             }
         }
 

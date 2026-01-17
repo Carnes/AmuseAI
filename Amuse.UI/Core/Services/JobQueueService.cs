@@ -21,6 +21,7 @@ namespace Amuse.UI.Core.Services
         private readonly ConcurrentDictionary<Guid, GenerationJob> _allJobs;
         private readonly CancellationTokenSource _processingCts;
         private readonly Task _processingTask;
+        private readonly SemaphoreSlim _generationLock;
         private GenerationJob _currentJob;
 
         public JobQueueService(IGenerationService generationService, ILogger<JobQueueService> logger)
@@ -30,6 +31,7 @@ namespace Amuse.UI.Core.Services
             _jobQueue = new BlockingCollection<GenerationJob>();
             _allJobs = new ConcurrentDictionary<Guid, GenerationJob>();
             _processingCts = new CancellationTokenSource();
+            _generationLock = new SemaphoreSlim(1, 1);
 
             // Start background processing task
             _processingTask = Task.Factory.StartNew(
@@ -41,8 +43,37 @@ namespace Amuse.UI.Core.Services
 
         public bool IsProcessing => _currentJob != null;
 
+        public bool IsGenerationLockHeld => _generationLock.CurrentCount == 0;
+
         public event EventHandler<JobStatusChangedEventArgs> JobStatusChanged;
         public event EventHandler<JobProgressEventArgs> JobProgressChanged;
+        public event EventHandler<JobCompletedEventArgs> JobCompleted;
+
+        public async Task<IDisposable> AcquireGenerationLockAsync(CancellationToken cancellationToken = default)
+        {
+            await _generationLock.WaitAsync(cancellationToken);
+            return new GenerationLockReleaser(_generationLock);
+        }
+
+        private sealed class GenerationLockReleaser : IDisposable
+        {
+            private readonly SemaphoreSlim _semaphore;
+            private bool _disposed;
+
+            public GenerationLockReleaser(SemaphoreSlim semaphore)
+            {
+                _semaphore = semaphore;
+            }
+
+            public void Dispose()
+            {
+                if (!_disposed)
+                {
+                    _disposed = true;
+                    _semaphore.Release();
+                }
+            }
+        }
 
         public Task<Guid> EnqueueAsync(GenerationJob job)
         {
@@ -188,9 +219,23 @@ namespace Amuse.UI.Core.Services
         private async Task ProcessJobAsync(GenerationJob job, CancellationToken cancellationToken)
         {
             _currentJob = job;
+
+            // Check if we need to wait for lock (UI might be generating)
+            if (IsGenerationLockHeld)
+            {
+                job.ProgressMessage = "Waiting for UI...";
+                RaiseJobProgressChanged(job.Id, 0, job.ProgressMessage, job.Source);
+                _logger.LogInformation("[JobQueue] Job {JobId} waiting for generation lock (UI is generating)", job.Id);
+            }
+
+            // Acquire generation lock to prevent concurrent GPU access
+            using var generationLock = await AcquireGenerationLockAsync(cancellationToken);
+
+            // Now we have the lock - set status to Processing
             var oldStatus = job.Status;
             job.Status = JobStatus.Processing;
-            job.StartedAt = DateTime.UtcNow;
+            job.StartedAt = DateTime.Now;
+            job.ProgressMessage = "Starting...";
 
             _logger.LogInformation("[JobQueue] Processing job {JobId} of type {JobType}", job.Id, job.Type);
             RaiseJobStatusChanged(job.Id, oldStatus, JobStatus.Processing, job.Source);
@@ -224,6 +269,7 @@ namespace Amuse.UI.Core.Services
                 _logger.LogInformation("[JobQueue] Completed job {JobId} in {Elapsed:F2}s",
                     job.Id, result.ElapsedSeconds);
                 RaiseJobStatusChanged(job.Id, JobStatus.Processing, JobStatus.Completed, job.Source);
+                RaiseJobCompleted(job, result);
             }
             catch (OperationCanceledException)
             {
@@ -307,6 +353,18 @@ namespace Amuse.UI.Core.Services
             });
         }
 
+        private void RaiseJobCompleted(GenerationJob job, GenerationJobResult result)
+        {
+            JobCompleted?.Invoke(this, new JobCompletedEventArgs
+            {
+                JobId = job.Id,
+                Job = job,
+                Result = result,
+                Source = job.Source,
+                JobType = job.Type
+            });
+        }
+
         public void Dispose()
         {
             _processingCts.Cancel();
@@ -320,6 +378,7 @@ namespace Amuse.UI.Core.Services
 
             _processingCts.Dispose();
             _jobQueue.Dispose();
+            _generationLock.Dispose();
         }
     }
 }

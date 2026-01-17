@@ -1,3 +1,4 @@
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace Amuse.UI.Frontends.Api.DTOs
@@ -9,8 +10,8 @@ namespace Amuse.UI.Frontends.Api.DTOs
     {
         /// <summary>
         /// Name of the model to use for generation.
+        /// If not specified, uses the default model from settings.
         /// </summary>
-        [Required]
         public string ModelName { get; set; }
 
         /// <summary>
@@ -65,40 +66,27 @@ namespace Amuse.UI.Frontends.Api.DTOs
     }
 
     /// <summary>
-    /// Request DTO for image-to-image generation.
-    /// </summary>
-    public class ImageToImageRequest : TextToImageRequest
-    {
-        /// <summary>
-        /// Base64-encoded input image.
-        /// </summary>
-        [Required]
-        public string InputImageBase64 { get; set; }
-
-        /// <summary>
-        /// Strength of the transformation (0.0 to 1.0).
-        /// Higher values change the image more.
-        /// </summary>
-        [Range(0, 1)]
-        public float? Strength { get; set; } = 0.75f;
-    }
-
-    /// <summary>
     /// Request DTO for image upscaling.
     /// </summary>
     public class UpscaleRequest
     {
         /// <summary>
         /// Name of the upscale model to use.
+        /// If not specified, uses the default upscale model from settings.
         /// </summary>
-        [Required]
         public string ModelName { get; set; }
 
         /// <summary>
         /// Base64-encoded input image to upscale.
+        /// Either this or SourceJobId must be provided.
         /// </summary>
-        [Required]
         public string InputImageBase64 { get; set; }
+
+        /// <summary>
+        /// Job ID of a completed generation job to use as input.
+        /// Either this or InputImageBase64 must be provided.
+        /// </summary>
+        public Guid? SourceJobId { get; set; }
 
         /// <summary>
         /// Scale factor (e.g., 2 for 2x upscale).

@@ -89,7 +89,7 @@ namespace Amuse.UI.Core.Models
                 Type = type,
                 Status = JobStatus.Pending,
                 Source = source,
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = DateTime.Now,
                 RequestData = requestData,
                 CompletionSource = new TaskCompletionSource<GenerationJobResult>(),
                 CancellationTokenSource = new System.Threading.CancellationTokenSource()

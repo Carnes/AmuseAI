@@ -32,8 +32,9 @@
         <DockPanel Margin="100,50,100,50" MaxWidth="1200"  MaxHeight="800" >
 
             <DockPanel DockPanel.Dock="Top">
-                <StackPanel DockPanel.Dock="Right" Width="200">
-                    <Button Content="Save Changes" Height="30" Command="{Binding SaveCommand}" Style="{StaticResource InfoButtonStyle}"/>
+                <StackPanel DockPanel.Dock="Right" Width="350" Orientation="Horizontal" HorizontalAlignment="Right">
+                    <TextBlock Text="{Binding SaveStatusMessage}" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="{StaticResource AccentColour2}" FontSize="11"/>
+                    <Button Content="Save Changes" Height="30" Width="120" Command="{Binding SaveCommand}" Style="{StaticResource InfoButtonStyle}" IsEnabled="{Binding IsSaving, Converter={StaticResource InverseBoolConverter}}"/>
                 </StackPanel>
                 <TextBlock Text="Settings" FontSize="22" />
             </DockPanel>
@@ -662,31 +663,144 @@
                             <TextBlock Text="Api" TextAlignment="Center" VerticalAlignment="Center" />
                         </DockPanel>
                     </TabItem.Header>
-                    <GroupBox Margin="6,0,0,0" Padding="5">
-                        <GroupBox.Header>
-                            <TextBlock Text="Api Settings" />
-                        </GroupBox.Header>
-                        <StackPanel>
-                            <CheckBox Content="Is Enabled" IsChecked="{Binding Settings.ApiIsEnabled, Mode=TwoWay}" Margin="0,10,0,0"/>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="6,0,0,0">
+                            <GroupBox Padding="5">
+                                <GroupBox.Header>
+                                    <TextBlock Text="Api Settings" />
+                                </GroupBox.Header>
+                                <StackPanel>
+                                    <CheckBox Content="Is Enabled" IsChecked="{Binding Settings.ApiIsEnabled, Mode=TwoWay}" Margin="0,10,0,0"/>
 
-                            <DockPanel Margin="0,10,0,0">
-                                <Grid DockPanel.Dock="Left" MinWidth="200">
-                                    <StackPanel>
-                                        <TextBlock Text="Port" Style="{StaticResource FieldTextBlockStyle}"/>
-                                        <TextBox Text="{Binding Settings.ApiPort, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="100" HorizontalAlignment="Left"/>
+                                    <DockPanel Margin="0,10,0,0">
+                                        <Grid DockPanel.Dock="Left" MinWidth="200">
+                                            <StackPanel>
+                                                <TextBlock Text="Port" Style="{StaticResource FieldTextBlockStyle}"/>
+                                                <TextBox Text="{Binding Settings.ApiPort, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="100" HorizontalAlignment="Left"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </DockPanel>
+
+                                    <StackPanel Orientation="Horizontal" Margin="0,15,0,0">
+                                        <TextBlock Text="Swagger UI: " VerticalAlignment="Center"/>
+                                        <userControls:HyperlinkControl Label="{Binding Settings.ApiSwaggerUrl}" Link="{Binding Settings.ApiSwaggerUrl}"/>
                                     </StackPanel>
-                                </Grid>
-                            </DockPanel>
 
-                            <StackPanel Orientation="Horizontal" Margin="0,15,0,0">
-                                <TextBlock Text="Swagger UI: " VerticalAlignment="Center"/>
-                                <userControls:HyperlinkControl Label="{Binding Settings.ApiSwaggerUrl}" Link="{Binding Settings.ApiSwaggerUrl}"/>
-                            </StackPanel>
+                                    <TextBlock Text="Note: Changes to Api settings require an application restart to take effect."
+                                               Margin="0,20,0,0" FontStyle="Italic" Opacity=".7" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </GroupBox>
 
-                            <TextBlock Text="Note: Changes to Api settings require an application restart to take effect."
-                                       Margin="0,20,0,0" FontStyle="Italic" Opacity=".7" TextWrapping="Wrap"/>
+                            <GroupBox Padding="5" Margin="0,10,0,0">
+                                <GroupBox.Header>
+                                    <TextBlock Text="Generation Defaults" />
+                                </GroupBox.Header>
+                                <StackPanel>
+                                    <TextBlock Text="Default values used when API parameters are omitted. Also used as initial values in the UI."
+                                               Margin="0,5,0,10" FontStyle="Italic" Opacity=".7" TextWrapping="Wrap"/>
+
+                                    <!-- Default Model -->
+                                    <DockPanel Margin="0,5,0,0">
+                                        <Grid DockPanel.Dock="Left" MinWidth="400">
+                                            <StackPanel>
+                                                <TextBlock Text="Default Model" Style="{StaticResource FieldTextBlockStyle}"/>
+                                                <ComboBox ItemsSource="{Binding Settings.StableDiffusionModelSets}"
+                                                          SelectedValue="{Binding Settings.GenerationDefaults.DefaultModelName, Mode=TwoWay}"
+                                                          SelectedValuePath="Name"
+                                                          DisplayMemberPath="Name"
+                                                          IsEditable="True"
+                                                          Foreground="{StaticResource ControlDefaultForeground}"
+                                                          Text="{Binding Settings.GenerationDefaults.DefaultModelName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </DockPanel>
+
+                                    <!-- Default Negative Prompt -->
+                                    <DockPanel Margin="0,10,0,0">
+                                        <Grid DockPanel.Dock="Left" MinWidth="550">
+                                            <StackPanel>
+                                                <TextBlock Text="Default Negative Prompt" Style="{StaticResource FieldTextBlockStyle}"/>
+                                                <TextBox Text="{Binding Settings.GenerationDefaults.DefaultNegativePrompt, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                         TextWrapping="Wrap" AcceptsReturn="True" MinHeight="50" MaxHeight="100"
+                                                         VerticalScrollBarVisibility="Auto"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </DockPanel>
+
+                                    <!-- Width and Height -->
+                                    <DockPanel Margin="0,10,0,0">
+                                        <StackPanel Orientation="Horizontal">
+                                            <StackPanel MinWidth="120" Margin="0,0,20,0">
+                                                <TextBlock Text="Default Width" Style="{StaticResource FieldTextBlockStyle}"/>
+                                                <TextBox Text="{Binding Settings.GenerationDefaults.DefaultWidth, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="100" HorizontalAlignment="Left"/>
+                                            </StackPanel>
+                                            <StackPanel MinWidth="120">
+                                                <TextBlock Text="Default Height" Style="{StaticResource FieldTextBlockStyle}"/>
+                                                <TextBox Text="{Binding Settings.GenerationDefaults.DefaultHeight, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="100" HorizontalAlignment="Left"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </DockPanel>
+
+                                    <!-- Steps and Guidance Scale -->
+                                    <DockPanel Margin="0,10,0,0">
+                                        <StackPanel Orientation="Horizontal">
+                                            <StackPanel MinWidth="120" Margin="0,0,20,0">
+                                                <TextBlock Text="Default Steps" Style="{StaticResource FieldTextBlockStyle}"/>
+                                                <TextBox Text="{Binding Settings.GenerationDefaults.DefaultSteps, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="100" HorizontalAlignment="Left"/>
+                                            </StackPanel>
+                                            <StackPanel MinWidth="120">
+                                                <TextBlock Text="Default Guidance Scale" Style="{StaticResource FieldTextBlockStyle}"/>
+                                                <TextBox Text="{Binding Settings.GenerationDefaults.DefaultGuidanceScale, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="100" HorizontalAlignment="Left"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </DockPanel>
+
+                                    <!-- Scheduler Type -->
+                                    <DockPanel Margin="0,10,0,0">
+                                        <Grid DockPanel.Dock="Left" MinWidth="200">
+                                            <StackPanel>
+                                                <TextBlock Text="Default Scheduler" Style="{StaticResource FieldTextBlockStyle}"/>
+                                                <ComboBox ItemsSource="{Binding Source={StaticResource SchedulerType}}"
+                                                          SelectedItem="{Binding SelectedDefaultSchedulerType, Mode=TwoWay}"
+                                                          Width="200" HorizontalAlignment="Left"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </DockPanel>
+
+                                    <!-- Upscale Defaults Header -->
+                                    <TextBlock Text="Upscale Defaults" FontWeight="Medium" Margin="0,20,0,5"/>
+                                    <Separator Margin="0,0,0,10"/>
+
+                                    <!-- Default Upscale Model -->
+                                    <DockPanel Margin="0,5,0,0">
+                                        <Grid DockPanel.Dock="Left" MinWidth="400">
+                                            <StackPanel>
+                                                <TextBlock Text="Default Upscale Model" Style="{StaticResource FieldTextBlockStyle}"/>
+                                                <ComboBox ItemsSource="{Binding Settings.UpscaleModelSets}"
+                                                          SelectedValue="{Binding Settings.GenerationDefaults.DefaultUpscaleModelName, Mode=TwoWay}"
+                                                          SelectedValuePath="Name"
+                                                          DisplayMemberPath="Name"
+                                                          IsEditable="True"
+                                                          Foreground="{StaticResource ControlDefaultForeground}"
+                                                          Text="{Binding Settings.GenerationDefaults.DefaultUpscaleModelName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </DockPanel>
+
+                                    <!-- Default Scale Factor -->
+                                    <DockPanel Margin="0,10,0,0">
+                                        <Grid DockPanel.Dock="Left" MinWidth="120">
+                                            <StackPanel>
+                                                <TextBlock Text="Default Scale Factor" Style="{StaticResource FieldTextBlockStyle}"/>
+                                                <TextBox Text="{Binding Settings.GenerationDefaults.DefaultScaleFactor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="100" HorizontalAlignment="Left"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </DockPanel>
+
+                                </StackPanel>
+                            </GroupBox>
                         </StackPanel>
-                    </GroupBox>
+                    </ScrollViewer>
                 </TabItem>
 
                 <!--Footer-->

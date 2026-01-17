@@ -91,7 +91,11 @@ namespace Amuse.UI.Core.Services
                 InferenceSteps = schedulerOptions.InferenceSteps,
                 GuidanceScale = schedulerOptions.GuidanceScale,
                 ElapsedSeconds = elapsed,
-                ModelName = parameters.ModelName
+                ModelName = parameters.ModelName,
+                OnnxImage = result,
+                GenerateOptions = generateOptions,
+                DiffuserType = DiffuserType.TextToImage,
+                PipelineType = modelViewModel.ModelSet.PipelineType
             };
         }
 
@@ -149,7 +153,11 @@ namespace Amuse.UI.Core.Services
                 InferenceSteps = schedulerOptions.InferenceSteps,
                 GuidanceScale = schedulerOptions.GuidanceScale,
                 ElapsedSeconds = elapsed,
-                ModelName = parameters.ModelName
+                ModelName = parameters.ModelName,
+                OnnxImage = result,
+                GenerateOptions = generateOptions,
+                DiffuserType = DiffuserType.ImageToImage,
+                PipelineType = modelViewModel.ModelSet.PipelineType
             };
         }
 
@@ -171,13 +179,35 @@ namespace Amuse.UI.Core.Services
             // Convert input image bytes to OnnxImage
             var inputImage = await OnnxImage.FromBytesAsync(parameters.InputImage);
 
-            var options = new UpscaleOptions(
-                modelViewModel.ModelSet.TileMode,
-                modelViewModel.ModelSet.TileSize,
-                modelViewModel.ModelSet.TileOverlap,
-                false);
+            _logger.LogInformation("[GenerationService] Input image size: {Width}x{Height}", inputImage.Width, inputImage.Height);
 
-            _logger.LogInformation("[GenerationService] Upscaling image...");
+            // Some upscale models (like Swin2SR) require dimensions divisible by certain values
+            // If tiling is disabled and dimensions aren't compatible, suggest enabling tiling
+            var tileMode = modelViewModel.ModelSet.TileMode;
+            var tileSize = modelViewModel.ModelSet.TileSize;
+            var tileOverlap = modelViewModel.ModelSet.TileOverlap;
+
+            // If tiling is off but image is large or not divisible by common requirements, enable tiling
+            if (tileMode == TileMode.None)
+            {
+                // Many upscale models require dimensions divisible by 8 or 16
+                var needsTiling = inputImage.Width % 16 != 0 || inputImage.Height % 16 != 0 ||
+                                  inputImage.Width > 512 || inputImage.Height > 512;
+
+                if (needsTiling)
+                {
+                    _logger.LogInformation("[GenerationService] Enabling tiling for compatibility (input {Width}x{Height})",
+                        inputImage.Width, inputImage.Height);
+                    tileMode = TileMode.ClipBlend;
+                    if (tileSize <= 0) tileSize = 512;
+                    if (tileOverlap <= 0) tileOverlap = 16;
+                }
+            }
+
+            var options = new UpscaleOptions(tileMode, tileSize, tileOverlap, false);
+
+            _logger.LogInformation("[GenerationService] Upscaling image with TileMode={TileMode}, TileSize={TileSize}...",
+                tileMode, tileSize);
 
             // Execute upscaling
             var result = await Task.Run(() =>
@@ -196,24 +226,33 @@ namespace Amuse.UI.Core.Services
                 Width = result.Width,
                 Height = result.Height,
                 ElapsedSeconds = elapsed,
-                ModelName = parameters.ModelName
+                ModelName = parameters.ModelName,
+                OnnxImage = result
+                // Note: Upscale jobs don't have a DiffuserType - they use a separate pipeline
             };
         }
 
         public IReadOnlyList<ModelInfo> GetAvailableModels()
         {
             return _settings.StableDiffusionModelSets
-                .Select(m => new ModelInfo
+                .Select(m =>
                 {
-                    Name = m.Name,
-                    PipelineType = m.ModelSet.PipelineType.ToString(),
-                    DefaultWidth = m.ModelSet.SampleSize,
-                    DefaultHeight = m.ModelSet.SampleSize,
-                    SupportedSchedulers = m.ModelSet.Schedulers?.Select(s => s.ToString()).ToList()
-                        ?? GetDefaultSchedulers(m.ModelSet.PipelineType),
-                    SupportedDiffusers = m.ModelSet.Diffusers?.Select(d => d.ToString()).ToList()
-                        ?? new List<string> { "TextToImage", "ImageToImage" },
-                    IsLoaded = _modelCacheService.IsModelLoaded(m)
+                    var constraints = GetDimensionConstraints(m.ModelSet.PipelineType);
+                    return new ModelInfo
+                    {
+                        Name = m.Name,
+                        PipelineType = m.ModelSet.PipelineType.ToString(),
+                        DefaultWidth = m.ModelSet.SampleSize,
+                        DefaultHeight = m.ModelSet.SampleSize,
+                        MinDimension = constraints.Min,
+                        MaxDimension = constraints.Max,
+                        DimensionMultiple = constraints.Multiple,
+                        SupportedSchedulers = m.ModelSet.Schedulers?.Select(s => s.ToString()).ToList()
+                            ?? GetDefaultSchedulers(m.ModelSet.PipelineType),
+                        SupportedDiffusers = m.ModelSet.Diffusers?.Select(d => d.ToString()).ToList()
+                            ?? new List<string> { "TextToImage", "ImageToImage" },
+                        IsLoaded = _modelCacheService.IsModelLoaded(m)
+                    };
                 })
                 .ToList();
         }
@@ -326,6 +365,66 @@ namespace Amuse.UI.Core.Services
                 PipelineType.LatentConsistency => new[] { "LCM" },
                 PipelineType.Flux => new[] { "FlowMatchEulerDiscrete" },
                 _ => new[] { "EulerAncestral", "Euler", "DDPM", "DDIM" }
+            };
+        }
+
+        public DimensionValidationResult ValidateDimensions(string modelName, int width, int height)
+        {
+            var model = FindModelByName(modelName);
+            if (model == null)
+                return DimensionValidationResult.Error($"Model '{modelName}' not found", 0, 0, 0);
+
+            var constraints = GetDimensionConstraints(model.ModelSet.PipelineType);
+
+            // Check if dimensions are within bounds
+            if (width < constraints.Min || height < constraints.Min)
+            {
+                return DimensionValidationResult.Error(
+                    $"Dimensions must be at least {constraints.Min}x{constraints.Min} for this model",
+                    constraints.Min, constraints.Max, constraints.Multiple);
+            }
+
+            if (width > constraints.Max || height > constraints.Max)
+            {
+                return DimensionValidationResult.Error(
+                    $"Dimensions must be at most {constraints.Max}x{constraints.Max} for this model",
+                    constraints.Min, constraints.Max, constraints.Multiple);
+            }
+
+            // Check if dimensions are divisible by the required multiple
+            if (width % constraints.Multiple != 0 || height % constraints.Multiple != 0)
+            {
+                return DimensionValidationResult.Error(
+                    $"Width and height must be divisible by {constraints.Multiple} for this model",
+                    constraints.Min, constraints.Max, constraints.Multiple);
+            }
+
+            return DimensionValidationResult.Success();
+        }
+
+        /// <summary>
+        /// Gets dimension constraints for a given pipeline type.
+        /// </summary>
+        private static (int Min, int Max, int Multiple) GetDimensionConstraints(PipelineType pipelineType)
+        {
+            return pipelineType switch
+            {
+                // SD 1.x models: trained at 512, can handle 256-1024
+                PipelineType.StableDiffusion => (256, 1024, 64),
+                PipelineType.LatentConsistency => (256, 1024, 64),
+                PipelineType.Locomotion => (256, 1024, 64),
+
+                // SD 2.x models: trained at 768, can handle 256-1280
+                PipelineType.StableDiffusion2 => (256, 1280, 64),
+
+                // SDXL and newer: trained at 1024, can handle 512-2048
+                PipelineType.StableDiffusionXL => (512, 2048, 64),
+                PipelineType.StableCascade => (512, 2048, 64),
+                PipelineType.StableDiffusion3 => (512, 2048, 64),
+                PipelineType.Flux => (256, 2048, 16), // Flux uses 16-pixel alignment
+
+                // Default: conservative limits
+                _ => (256, 2048, 64)
             };
         }
     }

@@ -1,15 +1,19 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Amuse.UI.Core.Services;
 using Amuse.UI.Frontends.Api.Controllers;
+using Amuse.UI.Frontends.Api.DTOs;
 using Amuse.UI.Models;
 using Amuse.UI.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Serilog;
 
 namespace Amuse.UI.Frontends.Api
 {
@@ -67,6 +71,24 @@ namespace Amuse.UI.Frontends.Api
                 builder.Services.AddControllers()
                     .AddApplicationPart(typeof(GenerateController).Assembly);
 
+                // Configure API behavior to log validation errors
+                builder.Services.Configure<ApiBehaviorOptions>(options =>
+                {
+                    var defaultFactory = options.InvalidModelStateResponseFactory;
+                    options.InvalidModelStateResponseFactory = context =>
+                    {
+                        var errors = context.ModelState
+                            .Where(e => e.Value?.Errors.Count > 0)
+                            .Select(e => $"{e.Key}: {string.Join(", ", e.Value.Errors.Select(err => err.ErrorMessage))}")
+                            .ToList();
+
+                        var errorMessage = string.Join("; ", errors);
+                        _logger.LogWarning("[API] Validation error: {Errors}", errorMessage);
+
+                        return new BadRequestObjectResult(ErrorResponse.BadRequest("Validation failed", errorMessage));
+                    };
+                });
+
                 // Add Swagger for API documentation
                 builder.Services.AddEndpointsApiExplorer();
                 builder.Services.AddSwaggerGen(c =>
@@ -85,9 +107,11 @@ namespace Amuse.UI.Frontends.Api
                 builder.Services.AddSingleton(_serviceProvider.GetRequiredService<IModelCacheService>());
                 builder.Services.AddSingleton(_settings);
 
-                // Configure logging
+                // Configure logging to use Serilog with LogSinkService
                 builder.Logging.ClearProviders();
-                builder.Logging.AddConsole();
+                builder.Host.UseSerilog((context, configuration) => configuration
+                    .MinimumLevel.Information()
+                    .WriteTo.Sink(LogSinkService.Instance));
 
                 _webApp = builder.Build();
 

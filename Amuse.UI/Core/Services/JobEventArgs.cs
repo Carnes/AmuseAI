@@ -24,4 +24,17 @@ namespace Amuse.UI.Core.Services
         public string Message { get; init; }
         public string Source { get; init; }
     }
+
+    /// <summary>
+    /// Event args for successful job completion with result.
+    /// Used for UI history integration.
+    /// </summary>
+    public class JobCompletedEventArgs : EventArgs
+    {
+        public Guid JobId { get; init; }
+        public GenerationJob Job { get; init; }
+        public GenerationJobResult Result { get; init; }
+        public string Source { get; init; }
+        public JobType JobType { get; init; }
+    }
 }

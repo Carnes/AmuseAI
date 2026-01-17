@@ -63,6 +63,16 @@
                 <TextBlock/>
             </DockPanel>
 
+            <!-- UI Generating Indicator -->
+            <Border DockPanel.Dock="Top" Margin="0,0,0,5" Padding="8,6" CornerRadius="3"
+                    Background="#1A00AAFF" BorderBrush="#00AAFF" BorderThickness="1"
+                    Visibility="{Binding IsUiGenerating, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <StackPanel Orientation="Horizontal">
+                    <Ellipse Width="8" Height="8" Fill="#00AAFF" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                    <TextBlock Text="UI is currently generating..." Foreground="#00AAFF" FontSize="12" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Border>
+
             <Border BorderBrush="{StaticResource ControlBrightDefaultBorderBrush}" BorderThickness="1" CornerRadius="3">
                 <ListBox ItemsSource="{Binding Jobs}"
                          SelectedItem="{Binding SelectedJob}"
@@ -134,7 +144,7 @@
         <!-- Log Section -->
         <DockPanel Grid.Row="3" Margin="10,0,10,10">
             <DockPanel DockPanel.Dock="Top" Margin="0,0,0,5">
-                <TextBlock Text="API Logs" FontSize="14" FontWeight="Medium" VerticalAlignment="Center"/>
+                <TextBlock Text="Logs" FontSize="14" FontWeight="Medium" VerticalAlignment="Center"/>
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button Command="{Binding ClearLogsCommand}" ToolTip="Clear Logs" Padding="8,4">
                         <userControls:FontAwesome Icon="&#xf2ed;" IconStyle="Light" Size="12"/>
@@ -161,7 +171,9 @@
                     </ListBox.ItemContainerStyle>
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding FormattedMessage}" FontFamily="Consolas" FontSize="11" TextWrapping="NoWrap">
+                            <TextBlock Text="{Binding FormattedMessage}" FontFamily="Consolas" FontSize="11" TextWrapping="NoWrap"
+                                       Cursor="Hand" ToolTip="Click to copy"
+                                       MouseLeftButtonUp="LogEntry_Click" Tag="{Binding FormattedMessage}">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Foreground" Value="{StaticResource ControlDefaultForeground}"/>

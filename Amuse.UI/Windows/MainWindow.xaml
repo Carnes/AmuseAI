@@ -367,7 +367,7 @@
             </TabItem>
 
             <!--API-->
-            <TabItem>
+            <TabItem Visibility="{Binding Settings.ApiIsEnabled, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <TabItem.Header>
                     <StackPanel Orientation="Horizontal" Margin="5">
                         <controls:FontAwesome Icon="&#xf542;" IconStyle="Solid" Color="{StaticResource AccentColour2}" Size="16"/>
