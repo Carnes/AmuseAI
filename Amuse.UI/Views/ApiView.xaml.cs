@@ -27,6 +27,10 @@ namespace Amuse.UI.Views
 
         public ApiView()
         {
+            // Initialize commands before InitializeComponent so bindings work
+            ClearCompletedCommand = new AsyncRelayCommand(ClearCompleted);
+            ClearLogsCommand = new AsyncRelayCommand(ClearLogs);
+
             InitializeComponent();
 
             _jobQueueService = App.GetService<IJobQueueService>();
@@ -54,9 +58,6 @@ namespace Amuse.UI.Views
             };
             _lockStatusTimer.Tick += OnLockStatusTimerTick;
             _lockStatusTimer.Start();
-
-            ClearCompletedCommand = new AsyncRelayCommand(ClearCompleted);
-            ClearLogsCommand = new AsyncRelayCommand(ClearLogs);
         }
 
         private void OnLoaded(object sender, RoutedEventArgs e)

@@ -1,6 +1,6 @@
 # Issue #1: Add headless API project for programmatic image generation
 
-## Current Status: Phases 1-4 Mostly Complete
+## Current Status: Complete
 
 Last updated: 2026-01-16
 
@@ -52,9 +52,9 @@ All endpoints implemented in `Frontends/Api/Controllers/`:
 - [x] **Click-to-Copy** - Job IDs and log entries can be clicked to copy to clipboard
 - [x] **Auto-Tiling for Upscale** - Automatically enables tiling for images with incompatible dimensions
 
-### Phase 4: Optional Features (Future)
-- [ ] API Key Authentication
-- [ ] Rate Limiting
+### Phase 4: Optional Features
+- [x] **API Key Authentication** - Optional `X-API-Key` header validation (configured in Settings)
+- [ ] Rate Limiting (not implemented)
 - [ ] Image-to-image endpoint (removed for now, may be added later)
 
 ---

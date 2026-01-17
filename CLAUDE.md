@@ -95,6 +95,13 @@ Custom OnnxStack packages (v0.60.0) in `Packages/` directory - configured via `N
 
 ## Current Development
 
-Branch `add_api` adds the REST API. See `CONTEXT.md` for detailed status and remaining tasks:
-- Phase 1-3 Complete: API foundation, UI integration, endpoint parity
-- Phase 4 Partial: Swagger done, API key auth and rate limiting pending
+### Issue #1: REST API (Branch: `add_api`)
+See `CONTEXT.md` for detailed status:
+- Phase 1-4 Complete: API foundation, UI integration, endpoints, Swagger, API key auth
+- Optional: Rate limiting (not implemented)
+
+### Issue #2: MCP Server for Claude Desktop
+See [GitHub Issue #2](https://github.com/Carnes/AmuseAI/issues/2) for details:
+- Separate `Amuse.MCP` project in the solution
+- Allows Claude Desktop to generate images via natural language
+- "Register with Claude Desktop" button in Settings

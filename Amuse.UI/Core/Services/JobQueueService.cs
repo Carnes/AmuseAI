@@ -173,7 +173,12 @@ namespace Amuse.UI.Core.Services
 
         public void ClearCompletedJobs(TimeSpan? olderThan = null)
         {
-            var toRemove = _allJobs.Values
+            var allJobsList = _allJobs.Values.ToList();
+            _logger.LogInformation("[JobQueue] ClearCompletedJobs called. Total jobs: {Total}, Statuses: {Statuses}",
+                allJobsList.Count,
+                string.Join(", ", allJobsList.Select(j => $"{j.Id:N}:{j.Status}")));
+
+            var toRemove = allJobsList
                 .Where(j => j.Status == JobStatus.Completed || j.Status == JobStatus.Failed ||
                             j.Status == JobStatus.Cancelled)
                 .Where(j => !olderThan.HasValue ||
@@ -186,7 +191,8 @@ namespace Amuse.UI.Core.Services
                 _allJobs.TryRemove(id, out _);
             }
 
-            _logger.LogInformation("[JobQueue] Cleared {Count} completed jobs", toRemove.Count);
+            _logger.LogInformation("[JobQueue] Cleared {Count} completed jobs, remaining: {Remaining}",
+                toRemove.Count, _allJobs.Count);
         }
 
         private async Task ProcessQueueAsync(CancellationToken cancellationToken)

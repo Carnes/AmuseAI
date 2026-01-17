@@ -1,4 +1,6 @@
 using System;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
 namespace Amuse.UI.Core.Models
@@ -7,8 +9,15 @@ namespace Amuse.UI.Core.Models
     /// Represents a generation job in the queue.
     /// Used by all frontends (UI, API, Discord, etc.) to submit and track generation requests.
     /// </summary>
-    public class GenerationJob
+    public class GenerationJob : INotifyPropertyChanged
     {
+        private JobStatus _status;
+        private DateTime? _startedAt;
+        private DateTime? _completedAt;
+        private int _progress;
+        private string _progressMessage;
+        private string _errorMessage;
+
         /// <summary>
         /// Unique identifier for this job.
         /// </summary>
@@ -22,7 +31,11 @@ namespace Amuse.UI.Core.Models
         /// <summary>
         /// Current status of the job.
         /// </summary>
-        public JobStatus Status { get; set; }
+        public JobStatus Status
+        {
+            get => _status;
+            set { _status = value; OnPropertyChanged(); }
+        }
 
         /// <summary>
         /// Source frontend that created this job (e.g., "UI", "API", "Discord").
@@ -38,27 +51,47 @@ namespace Amuse.UI.Core.Models
         /// <summary>
         /// When the job started processing (null if still pending).
         /// </summary>
-        public DateTime? StartedAt { get; set; }
+        public DateTime? StartedAt
+        {
+            get => _startedAt;
+            set { _startedAt = value; OnPropertyChanged(); }
+        }
 
         /// <summary>
         /// When the job completed or failed (null if still pending/processing).
         /// </summary>
-        public DateTime? CompletedAt { get; set; }
+        public DateTime? CompletedAt
+        {
+            get => _completedAt;
+            set { _completedAt = value; OnPropertyChanged(); }
+        }
 
         /// <summary>
         /// Current progress percentage (0-100).
         /// </summary>
-        public int Progress { get; set; }
+        public int Progress
+        {
+            get => _progress;
+            set { _progress = value; OnPropertyChanged(); }
+        }
 
         /// <summary>
         /// Current progress message (e.g., "Loading model...", "Step 15/30").
         /// </summary>
-        public string ProgressMessage { get; set; }
+        public string ProgressMessage
+        {
+            get => _progressMessage;
+            set { _progressMessage = value; OnPropertyChanged(); }
+        }
 
         /// <summary>
         /// Error message if the job failed.
         /// </summary>
-        public string ErrorMessage { get; set; }
+        public string ErrorMessage
+        {
+            get => _errorMessage;
+            set { _errorMessage = value; OnPropertyChanged(); }
+        }
 
         /// <summary>
         /// The request data for this job (type depends on JobType).
@@ -94,6 +127,13 @@ namespace Amuse.UI.Core.Models
                 CompletionSource = new TaskCompletionSource<GenerationJobResult>(),
                 CancellationTokenSource = new System.Threading.CancellationTokenSource()
             };
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }

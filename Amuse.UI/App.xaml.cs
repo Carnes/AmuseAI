@@ -103,6 +103,7 @@ namespace Amuse.UI
             _tempDirectory = Path.Combine(_dataDirectory, "Temp");
             _cacheDirectory = Path.Combine(_dataDirectory, "Cache");
             _logDirectory = Path.Combine(_dataDirectory, "Logs");
+            Directory.CreateDirectory(_logDirectory);
 
             var settings = SettingsManager.LoadSettings();
             ConfigManager.SetConfiguration(_dataDirectory);

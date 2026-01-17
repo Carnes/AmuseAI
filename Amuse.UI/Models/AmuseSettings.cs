@@ -67,6 +67,7 @@ namespace Amuse.UI.Models
         public int HistoryMaxItems { get; set; } = 5000;
         public bool ApiIsEnabled { get; set; }
         public int ApiPort { get; set; } = 5000;
+        public string ApiKey { get; set; }
 
         [JsonIgnore]
         public string ApiSwaggerUrl => $"http://localhost:{(ApiPort > 0 ? ApiPort : 5000)}/swagger";

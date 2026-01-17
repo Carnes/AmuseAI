@@ -93,7 +93,15 @@ AmuseAI includes an optional REST API for programmatic image generation, enablin
 1. Go to **Settings > Api**
 2. Check "Enable API"
 3. Configure the port (default: 5000)
-4. Restart the application
+4. Optionally set an API key for authentication
+5. Restart the application
+
+#### Authentication
+If an API key is configured, all requests (except Swagger UI) must include the `X-API-Key` header:
+```
+X-API-Key: your-api-key-here
+```
+Leave the API key field empty to disable authentication.
 
 #### API Endpoints
 - `POST /api/generate/text-to-image` - Queue a text-to-image generation job

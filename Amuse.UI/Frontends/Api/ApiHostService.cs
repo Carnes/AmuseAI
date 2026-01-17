@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Amuse.UI.Core.Services;
 using Amuse.UI.Frontends.Api.Controllers;
 using Amuse.UI.Frontends.Api.DTOs;
+using Amuse.UI.Frontends.Api.Middleware;
 using Amuse.UI.Models;
 using Amuse.UI.Services;
 using Microsoft.AspNetCore.Builder;
@@ -13,6 +14,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.OpenApi.Models;
 using Serilog;
 
 namespace Amuse.UI.Frontends.Api
@@ -93,11 +95,35 @@ namespace Amuse.UI.Frontends.Api
                 builder.Services.AddEndpointsApiExplorer();
                 builder.Services.AddSwaggerGen(c =>
                 {
-                    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+                    c.SwaggerDoc("v1", new OpenApiInfo
                     {
                         Title = "AmuseAI API",
                         Version = "v1",
                         Description = "REST API for AmuseAI image generation"
+                    });
+
+                    // Add API key authentication to Swagger UI
+                    c.AddSecurityDefinition("ApiKey", new OpenApiSecurityScheme
+                    {
+                        Type = SecuritySchemeType.ApiKey,
+                        In = ParameterLocation.Header,
+                        Name = "X-API-Key",
+                        Description = "API key for authentication (optional - only required if configured in settings)"
+                    });
+
+                    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+                    {
+                        {
+                            new OpenApiSecurityScheme
+                            {
+                                Reference = new OpenApiReference
+                                {
+                                    Type = ReferenceType.SecurityScheme,
+                                    Id = "ApiKey"
+                                }
+                            },
+                            Array.Empty<string>()
+                        }
                     });
                 });
 
@@ -122,6 +148,9 @@ namespace Amuse.UI.Frontends.Api
                     c.SwaggerEndpoint("/swagger/v1/swagger.json", "AmuseAI API v1");
                     c.RoutePrefix = "swagger";
                 });
+
+                // API key authentication (skipped if ApiKey is not configured)
+                _webApp.UseMiddleware<ApiKeyMiddleware>();
 
                 _webApp.MapControllers();
 

@@ -255,8 +255,8 @@ namespace Amuse.UI.Views
 
                 await Settings.SaveAsync();
 
-                SaveStatusMessage = $"Saved to {App.DataDirectory}";
-                _logger.LogInformation("Settings saved successfully");
+                SaveStatusMessage = "Saved";
+                _logger.LogInformation($"Settings saved to {App.DataDirectory}");
 
                 // Clear the message after 3 seconds
                 _ = Task.Run(async () =>
