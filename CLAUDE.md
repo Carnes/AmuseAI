@@ -93,6 +93,33 @@ When API is enabled (port 5000 by default):
 Custom OnnxStack packages (v0.60.0) in `Packages/` directory - configured via `NuGet.config`:
 - OnnxStack.Core, OnnxStack.Device, OnnxStack.StableDiffusion, OnnxStack.ImageUpscaler, OnnxStack.FeatureExtractor
 
+## Release Process
+
+To create a new release:
+
+```bash
+# 1. Update version in Amuse.UI/Amuse.UI.csproj
+#    <Version>X.Y.Z</Version>
+
+# 2. Build the release
+dotnet publish Amuse.UI/Amuse.UI.csproj -c Release -r win-x64 --self-contained false -o ./publish
+
+# 3. Create the zip file (PowerShell)
+powershell -Command "Compress-Archive -Path './publish/*' -DestinationPath './AmuseAI-vX.Y.Z-win-x64.zip' -Force"
+
+# 4. Create GitHub release with the zip file
+gh release create vX.Y.Z ./AmuseAI-vX.Y.Z-win-x64.zip --title "vX.Y.Z" --notes "Release notes here..."
+```
+
+**Release naming convention:**
+- Tag: `vX.Y.Z` (e.g., `v3.3.0`)
+- Zip file: `AmuseAI-vX.Y.Z-win-x64.zip`
+
+**Version bumping guidelines:**
+- Major (X): Breaking changes or major new features
+- Minor (Y): New features, API additions
+- Patch (Z): Bug fixes, minor improvements
+
 ## Current Development
 
 ### Issue #1: REST API (Branch: `add_api`)
